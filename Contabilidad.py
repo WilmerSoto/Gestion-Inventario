@@ -36,11 +36,12 @@ class IngresosEgresos:
         ttk.Label(master, text="Saldo").grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.var_total = ttk.StringVar(value="0.00")
         ttk.Label(master, textvariable=self.var_total).grid(row=4, column=1, padx=5, pady=5, sticky="ew")
+        self.actualizar_label_total()
         
         self.btn_añadir = ttk.Button(master, text="Añadir transaccion", command=self.añadir_transaccion)
         self.btn_añadir.grid(row=5, column=0, columnspan=2, padx=5, pady=10)
         
-        self.btn_revisarLista = ttk.Button(master, text="Revisar lista de transacciones", command=self.guardar_transacciones)
+        self.btn_revisarLista = ttk.Button(master, text="Revisar lista de transacciones", command=self)
         self.btn_revisarLista.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
         
         self.btn_generarExcel= ttk.Button(master, text="Generar excel", command=self)
@@ -71,8 +72,11 @@ class IngresosEgresos:
 
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
         
-        today = str(datetime.now().date())
+        self.calcular_total()
+        self.actualizar_label_total()
+        self.guardar_transacciones()
         
+        today = str(datetime.now().date())
         self.date_transaccion.entry.delete(0, ttk.END)
         self.date_transaccion.entry.insert(ttk.END, today)
         self.input_concepto.delete(0, ttk.END)
@@ -87,19 +91,8 @@ class IngresosEgresos:
             "monto": monto
         }
         
-    def actualizar_total(self, *args):
-        try:
-            ingreso = float(self.var_ingreso.get()) if self.var_ingreso.get() else 0.0
-        except ValueError:
-            ingreso = 0.0
-        
-        try:
-            egreso = float(self.var_egreso.get()) if self.var_egreso.get() else 0.0
-        except ValueError:
-            egreso = 0.0
-        
-        total = ingreso - egreso
-        self.var_total.set(f"{total:.2f}")
+    def actualizar_label_total(self):
+        self.var_total.set(f"{self.total_transacciones:.2f}")
 
     def guardar_transacciones(self):
         expanded_path = os.path.expanduser(self.path)
@@ -134,6 +127,7 @@ class IngresosEgresos:
     def calcular_total(self):
         self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
         
+        self.total_transacciones = 0.0
         for transaccion in self.transacciones:
             if transaccion["tipo"] == "ingreso":
                 self.total_transacciones += transaccion["monto"]
