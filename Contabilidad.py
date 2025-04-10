@@ -14,8 +14,9 @@ class IngresosEgresos:
         
         self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
         self.transacciones = []
+        self.total_transacciones = 0.0
         self.cargar_transacciones()
-        
+                
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
@@ -25,17 +26,12 @@ class IngresosEgresos:
         self.input_concepto.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         
         ttk.Label(master, text="Ingresos").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        self.var_ingreso = ttk.StringVar()
-        self.var_ingreso.trace_add("write", self.actualizar_total)
-        self.input_ingreso = ttk.Entry(master, textvariable=self.var_ingreso)
+        self.input_ingreso = ttk.Entry(master)
         self.input_ingreso.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         ttk.Label(master, text="Egresos").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        self.var_egreso = ttk.StringVar()
-        self.var_egreso.trace_add("write", self.actualizar_total)
-        self.input_egreso = ttk.Entry(master, textvariable=self.var_egreso)
+        self.input_egreso = ttk.Entry(master)
         self.input_egreso.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
-
         
         ttk.Label(master, text="Saldo").grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.var_total = ttk.StringVar(value="0.00")
@@ -108,10 +104,7 @@ class IngresosEgresos:
     def guardar_transacciones(self):
         expanded_path = os.path.expanduser(self.path)
         directory = os.path.dirname(expanded_path)
-        print(f"Directory:{directory}")
-        print(f"Expanded:{expanded_path}")
         if not os.path.exists(directory):
-            print("NO EXISTE DIRECTORIO")
             try:
                 os.makedirs(directory)
             except OSError as e:
@@ -136,6 +129,17 @@ class IngresosEgresos:
             Messagebox.show_error(f"No se pudo cargar las transacciones: {e}","ERROR")
             self.transacciones = []
         
+        self.calcular_total()
+        
+    def calcular_total(self):
+        self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
+        
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "ingreso":
+                self.total_transacciones += transaccion["monto"]
+            elif transaccion["tipo"] == "egreso":
+                self.total_transacciones -= transaccion["monto"]
+                
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
     app = IngresosEgresos(root)
