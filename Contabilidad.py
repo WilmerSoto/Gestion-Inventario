@@ -13,7 +13,8 @@ class IngresosEgresos:
         master.resizable(False, False)
         
         self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
-        self.transacciones = self.cargar_transacciones()
+        self.transacciones = []
+        self.cargar_transacciones()
         
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
@@ -124,19 +125,16 @@ class IngresosEgresos:
             Messagebox().show_error(f"No se pudo guardar las transacciones: {e}","ERROR")
 
     def cargar_transacciones(self):
-        transacciones = []
         expanded_path =  os.path.expanduser(self.path)
         try:
             if os.path.exists(expanded_path):
-                with open(self.path, "r") as f:
-                    transacciones = json.load(f)
+                with open(expanded_path, "r") as f:
+                    self.transacciones = json.load(f)
             else:
-                transacciones = []
+                self.transacciones = []
         except Exception as e:
             Messagebox.show_error(f"No se pudo cargar las transacciones: {e}","ERROR")
-            transacciones = []
-        
-        return transacciones
+            self.transacciones = []
         
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
