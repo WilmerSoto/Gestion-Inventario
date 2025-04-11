@@ -149,13 +149,17 @@ class VentanaTransacciones:
         self.top.resizable(False, False)
         self.transacciones = transacciones
         
+        ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
+        ttk.Style().configure("Treeview", font=("Open Sans", 11))
+        ttk.Style().map("Treeview", rowheight=[("!disabled", 22)]) 
+        
         self.frame_btn = ttk.Frame(self.top)
         self.frame_btn.pack(side=BOTTOM, anchor=W)
         
-        self.btn_separar = ttk.Button(self.frame_btn, text="Separar por tipo", command=self)
+        self.btn_separar = ttk.Button(self.frame_btn, text="Separar por tipo", command=self.separar_por_tipos)
         self.btn_separar.pack(side=LEFT, padx=10, pady=10)
         
-        self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self)
+        self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self.lista_combinada)
         self.btn_ambos.pack(side=LEFT, padx=10, pady=10)
         
         self.coldata = [{"text": "Fecha", "width": 100}, 
@@ -164,25 +168,53 @@ class VentanaTransacciones:
                    {"text": "Monto", "width": 150}, 
                    {"text": "Saldo", "width": 150}
                    ]
+        self.coldata_no_saldo = self.coldata.copy()[:-1]        
+        self.lista_combinada()
+    
+    def lista_combinada(self):
+        self.top.geometry("804x450")
         
+        if hasattr(self, "table"):
+            self.table.destroy()
+        if hasattr(self, "table2"):
+            self.table2.destroy()
+            
         self.table = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
-        
-        ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
-        ttk.Style().configure("Treeview", font=("Open Sans", 11))
-        ttk.Style().map("Treeview", rowheight=[("!disabled", 22)])
-        
+                
         total = 0
         for transaccion in self.transacciones:
             if transaccion["tipo"] == "Ingreso":
                 total += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
                 total -= transaccion["monto"]
-                                    
             self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
-
+            
         self.table.pack(side=LEFT, expand=True, fill=BOTH)
-        
         self.table.load_table_data()
+
+    
+    def separar_por_tipos(self):
+        self.top.geometry("1308x450")
+        
+        if hasattr(self, "table"):
+            self.table.destroy()
+        if hasattr(self, "table2"):
+            self.table2.destroy()
+        
+        self.table = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
+        self.table2 = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
+        
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
+            elif transaccion["tipo"] == "Egreso":
+                self.table2.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
+                
+        self.table.pack(side=LEFT, expand=True, fill=BOTH)
+        self.table2.pack(side=RIGHT, expand=True, fill=BOTH)
+
+        self.table.load_table_data()
+        self.table2.load_table_data()
         
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
