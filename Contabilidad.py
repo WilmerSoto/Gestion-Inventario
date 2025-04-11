@@ -145,19 +145,34 @@ class IngresosEgresos:
 class VentanaTransacciones:
     def __init__(self, master, transacciones):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
-        self.top.geometry("801x400")
+        self.top.geometry("804x400")
         self.top.resizable(False, False)
         self.transacciones = transacciones
+        colors = root.style.colors
         
-        self.table = Tableview(self.top, coldata=[{"text": "Fecha", "width": 100}, {"text": "Concepto", "width": 300, "anchor": CENTER}, {"text": "Tipo", "width": 100, "anchor": CENTER}, {"text": "Monto", "width": 100}, {"text": "Saldo", "width": 200}])
+        coldata = [{"text": "Fecha", "width": 100}, 
+                   {"text": "Concepto", "width": 300, "anchor": CENTER}, 
+                   {"text": "Tipo", "width": 100, "anchor": CENTER}, 
+                   {"text": "Monto", "width": 150}, 
+                   {"text": "Saldo", "width": 150}
+                   ]
+        
+        self.table = Tableview(self.top, coldata=coldata, searchable=True, paginated=True)
+        
         ttk.Style().configure("Treeview.Heading", font=("Robot bold", 14))
         ttk.Style().configure("Treeview", font=("Open Sans", 11))
         ttk.Style().map("Treeview", rowheight=[("!disabled", 22)])
         
+        total = 0
         for transaccion in self.transacciones:
-            self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
+            if transaccion["tipo"] == "Ingreso":
+                total += transaccion["monto"]
+            elif transaccion["tipo"] == "Egreso":
+                total -= transaccion["monto"]
+                                    
+            self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
 
-        self.table.pack(expand=True, fill="both")
+        self.table.pack(expand=True, fill=BOTH)
         self.table.load_table_data()
         
 if __name__ == "__main__":
