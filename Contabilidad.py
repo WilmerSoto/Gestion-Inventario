@@ -46,11 +46,11 @@ class IngresosEgresos:
         self.btn_añadir = ttk.Button(master, text="Añadir transaccion", command=self.añadir_transaccion)
         self.btn_añadir.grid(row=5, column=0, columnspan=2, padx=5, pady=10)
         
-        self.btn_revisarLista = ttk.Button(master, text="Revisar lista de transacciones", command=self.abrir_ventana_transacciones)
-        self.btn_revisarLista.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
+        self.btn_revisar_lista = ttk.Button(master, text="Revisar lista de transacciones", command=self.abrir_ventana_transacciones)
+        self.btn_revisar_lista.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
         
-        self.btn_generarExcel= ttk.Button(master, text="Generar excel", command=self)
-        self.btn_generarExcel.grid(row=7, column=0, columnspan=2, padx=5, pady=10)
+        self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=self.generar_excel)
+        self.btn_generar_excel.grid(row=7, column=0, columnspan=2, padx=5, pady=10)
     
     def añadir_transaccion(self):
         fecha = self.date_transaccion.entry.get()
