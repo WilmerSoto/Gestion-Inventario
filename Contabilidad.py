@@ -10,10 +10,10 @@ class IngresosEgresos:
     def __init__(self,  master):
         self.master = master
         master.title("Gestion de Transacciones")
-        ttk.Style().configure("TLabel", font=("Open Sans", 12))
-        ttk.Style().configure("TButton", font=("Open Sans", 10))
+        ttk.Style().configure("TLabel", font=("Open Sans bold", 12))
+        ttk.Style().configure("TButton", font=("Open Sans bold", 10))
 
-        master.geometry("350x380")
+        master.geometry("360x380")
         master.resizable(False, False)
         
         self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
@@ -149,7 +149,7 @@ class VentanaTransacciones:
         self.transacciones = transacciones
         
         self.table = Tableview(self.top, coldata=[{"text": "Fecha", "width": 100}, {"text": "Concepto", "width": 300}, {"text": "Tipo", "width": 100}, {"text": "Monto", "width": 100}, {"text": "Saldo", "width": 200}])
-        ttk.Style().configure("Treeview.Heading", font=("Open Sans", 14))
+        ttk.Style().configure("Treeview.Heading", font=("Open Sans bold", 14))
         ttk.Style().configure("Treeview", font=("Open Sans", 11))
         ttk.Style().map("Treeview", rowheight=[("!disabled", 22)])
         
