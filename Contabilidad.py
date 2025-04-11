@@ -13,7 +13,7 @@ class IngresosEgresos:
         ttk.Style().configure("TLabel", font=("Open Sans bold", 12))
         ttk.Style().configure("TButton", font=("Open Sans bold", 10))
 
-        master.geometry("360x380")
+        master.geometry("380x380")
         master.resizable(False, False)
         
         self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
@@ -23,22 +23,23 @@ class IngresosEgresos:
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
+        self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
                 
         ttk.Label(master, text="Concepto").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.input_concepto = ttk.Entry(master)
+        self.input_concepto = ttk.Entry(master, font=("Open Sans", 10))
         self.input_concepto.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         
         ttk.Label(master, text="Ingresos").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        self.input_ingreso = ttk.Entry(master)
+        self.input_ingreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_ingreso.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         ttk.Label(master, text="Egresos").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        self.input_egreso = ttk.Entry(master)
+        self.input_egreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_egreso.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
         
         ttk.Label(master, text="Saldo").grid(row=4, column=0, padx=5, pady=5, sticky="w")
-        self.var_total = ttk.StringVar(value="0.0")
+        self.var_total = ttk.StringVar(value="$ 0")
         ttk.Label(master, textvariable=self.var_total).grid(row=4, column=1, padx=5, pady=5, sticky="ew")
         self.actualizar_label_total()
         
@@ -69,10 +70,10 @@ class IngresosEgresos:
             return
         
         if ingreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto, "ingreso", ingreso_monto))
+            self.transacciones.append(self.crear_transaccion(fecha, concepto, "Ingreso", ingreso_monto))
         
         if egreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto, "egreso", egreso_monto))
+            self.transacciones.append(self.crear_transaccion(fecha, concepto, "Egreso", egreso_monto))
 
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
         
@@ -96,7 +97,7 @@ class IngresosEgresos:
         }
         
     def actualizar_label_total(self):
-        self.var_total.set(f"{self.total_transacciones}")
+        self.var_total.set(f"$ {self.total_transacciones:,.0f}")
 
     def guardar_transacciones(self):
         expanded_path = os.path.expanduser(self.path)
@@ -133,9 +134,9 @@ class IngresosEgresos:
         
         self.total_transacciones = 0
         for transaccion in self.transacciones:
-            if transaccion["tipo"] == "ingreso":
+            if transaccion["tipo"] == "Ingreso":
                 self.total_transacciones += transaccion["monto"]
-            elif transaccion["tipo"] == "egreso":
+            elif transaccion["tipo"] == "Egreso":
                 self.total_transacciones -= transaccion["monto"]
     
     def abrir_ventana_transacciones(self):
@@ -148,13 +149,13 @@ class VentanaTransacciones:
         self.top.resizable(False, False)
         self.transacciones = transacciones
         
-        self.table = Tableview(self.top, coldata=[{"text": "Fecha", "width": 100}, {"text": "Concepto", "width": 300}, {"text": "Tipo", "width": 100}, {"text": "Monto", "width": 100}, {"text": "Saldo", "width": 200}])
-        ttk.Style().configure("Treeview.Heading", font=("Open Sans bold", 14))
+        self.table = Tableview(self.top, coldata=[{"text": "Fecha", "width": 100}, {"text": "Concepto", "width": 300, "anchor": CENTER}, {"text": "Tipo", "width": 100, "anchor": CENTER}, {"text": "Monto", "width": 100}, {"text": "Saldo", "width": 200}])
+        ttk.Style().configure("Treeview.Heading", font=("Robot bold", 14))
         ttk.Style().configure("Treeview", font=("Open Sans", 11))
         ttk.Style().map("Treeview", rowheight=[("!disabled", 22)])
         
         for transaccion in self.transacciones:
-            self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],str(transaccion["monto"])])
+            self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
 
         self.table.pack(expand=True, fill="both")
         self.table.load_table_data()
