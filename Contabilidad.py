@@ -1,6 +1,7 @@
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
+from ttkbootstrap.tableview import Tableview
 from datetime import datetime
 import json
 import os
@@ -9,12 +10,15 @@ class IngresosEgresos:
     def __init__(self,  master):
         self.master = master
         master.title("Gestion de Transacciones")
-        master.geometry("320x350")
+        ttk.Style().configure("TLabel", font=("Open Sans", 12))
+        ttk.Style().configure("TButton", font=("Open Sans", 10))
+
+        master.geometry("350x380")
         master.resizable(False, False)
         
         self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
         self.transacciones = []
-        self.total_transacciones = 0.0
+        self.total_transacciones = 0
         self.cargar_transacciones()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -54,8 +58,8 @@ class IngresosEgresos:
         egreso = self.input_egreso.get()
         
         try:
-            ingreso_monto = float(ingreso) if ingreso else 0.0
-            egreso_monto = float(egreso) if egreso else 0.0
+            ingreso_monto = int(ingreso) if ingreso else 0
+            egreso_monto = int(egreso) if egreso else 0
         except ValueError:
             Messagebox.show_error("Los valores de ingreso y/o egresos debe ser numericos","ERROR")
             return
@@ -92,7 +96,7 @@ class IngresosEgresos:
         }
         
     def actualizar_label_total(self):
-        self.var_total.set(f"{self.total_transacciones:.1f}")
+        self.var_total.set(f"{self.total_transacciones}")
 
     def guardar_transacciones(self):
         expanded_path = os.path.expanduser(self.path)
@@ -127,7 +131,7 @@ class IngresosEgresos:
     def calcular_total(self):
         self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
         
-        self.total_transacciones = 0.0
+        self.total_transacciones = 0
         for transaccion in self.transacciones:
             if transaccion["tipo"] == "ingreso":
                 self.total_transacciones += transaccion["monto"]
@@ -139,23 +143,21 @@ class IngresosEgresos:
         
 class VentanaTransacciones:
     def __init__(self, master, transacciones):
-        self.top = ttk.Toplevel(master)
-        self.top.geometry("900x400")
+        self.top = ttk.Toplevel(title="Lista de Transacciones")
+        self.top.geometry("801x400")
         self.top.resizable(False, False)
-        self.top.title("Lista de Transacciones")
         self.transacciones = transacciones
         
-        self.tree = ttk.Treeview(self.top, columns=("Fecha", "Concepto", "Tipo", "Monto", "Saldo"), show="headings")
-        self.tree.heading("Fecha", text="Fecha")
-        self.tree.heading("Concepto", text="Concepto")
-        self.tree.heading("Tipo", text="Tipo")
-        self.tree.heading("Monto", text="Monto")
-        self.tree.heading("Saldo", text="Saldo")
-
+        self.table = Tableview(self.top, coldata=[{"text": "Fecha", "width": 100}, {"text": "Concepto", "width": 300}, {"text": "Tipo", "width": 100}, {"text": "Monto", "width": 100}, {"text": "Saldo", "width": 200}])
+        ttk.Style().configure("Treeview.Heading", font=("Open Sans", 14))
+        ttk.Style().configure("Treeview", font=("Open Sans", 11))
+        ttk.Style().map("Treeview", rowheight=[("!disabled", 22)])
+        
         for transaccion in self.transacciones:
-            self.tree.insert("", "end", values=(transaccion["fecha"], transaccion["concepto"], transaccion["tipo"], transaccion["monto"]))
-     
-        self.tree.pack(expand=True, fill="both")
+            self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],str(transaccion["monto"])])
+
+        self.table.pack(expand=True, fill="both")
+        self.table.load_table_data()
         
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
