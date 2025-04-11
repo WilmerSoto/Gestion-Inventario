@@ -34,14 +34,14 @@ class IngresosEgresos:
         self.input_egreso.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
         
         ttk.Label(master, text="Saldo").grid(row=4, column=0, padx=5, pady=5, sticky="w")
-        self.var_total = ttk.StringVar(value="0.00")
+        self.var_total = ttk.StringVar(value="0.0")
         ttk.Label(master, textvariable=self.var_total).grid(row=4, column=1, padx=5, pady=5, sticky="ew")
         self.actualizar_label_total()
         
         self.btn_añadir = ttk.Button(master, text="Añadir transaccion", command=self.añadir_transaccion)
         self.btn_añadir.grid(row=5, column=0, columnspan=2, padx=5, pady=10)
         
-        self.btn_revisarLista = ttk.Button(master, text="Revisar lista de transacciones", command=self)
+        self.btn_revisarLista = ttk.Button(master, text="Revisar lista de transacciones", command=self.abrir_ventana_transacciones)
         self.btn_revisarLista.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
         
         self.btn_generarExcel= ttk.Button(master, text="Generar excel", command=self)
@@ -92,7 +92,7 @@ class IngresosEgresos:
         }
         
     def actualizar_label_total(self):
-        self.var_total.set(f"{self.total_transacciones:.2f}")
+        self.var_total.set(f"{self.total_transacciones:.1f}")
 
     def guardar_transacciones(self):
         expanded_path = os.path.expanduser(self.path)
@@ -133,7 +133,30 @@ class IngresosEgresos:
                 self.total_transacciones += transaccion["monto"]
             elif transaccion["tipo"] == "egreso":
                 self.total_transacciones -= transaccion["monto"]
-                
+    
+    def abrir_ventana_transacciones(self):
+        VentanaTransacciones(self.master, self.transacciones)
+        
+class VentanaTransacciones:
+    def __init__(self, master, transacciones):
+        self.top = ttk.Toplevel(master)
+        self.top.geometry("900x400")
+        self.top.resizable(False, False)
+        self.top.title("Lista de Transacciones")
+        self.transacciones = transacciones
+        
+        self.tree = ttk.Treeview(self.top, columns=("Fecha", "Concepto", "Tipo", "Monto", "Saldo"), show="headings")
+        self.tree.heading("Fecha", text="Fecha")
+        self.tree.heading("Concepto", text="Concepto")
+        self.tree.heading("Tipo", text="Tipo")
+        self.tree.heading("Monto", text="Monto")
+        self.tree.heading("Saldo", text="Saldo")
+
+        for transaccion in self.transacciones:
+            self.tree.insert("", "end", values=(transaccion["fecha"], transaccion["concepto"], transaccion["tipo"], transaccion["monto"]))
+     
+        self.tree.pack(expand=True, fill="both")
+        
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
     app = IngresosEgresos(root)
