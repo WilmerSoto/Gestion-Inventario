@@ -145,21 +145,29 @@ class IngresosEgresos:
 class VentanaTransacciones:
     def __init__(self, master, transacciones):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
-        self.top.geometry("804x400")
+        self.top.geometry("804x450")
         self.top.resizable(False, False)
         self.transacciones = transacciones
-        colors = root.style.colors
         
-        coldata = [{"text": "Fecha", "width": 100}, 
+        self.frame_btn = ttk.Frame(self.top)
+        self.frame_btn.pack(side=BOTTOM, anchor=W)
+        
+        self.btn_separar = ttk.Button(self.frame_btn, text="Separar por tipo", command=self)
+        self.btn_separar.pack(side=LEFT, padx=10, pady=10)
+        
+        self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self)
+        self.btn_ambos.pack(side=LEFT, padx=10, pady=10)
+        
+        self.coldata = [{"text": "Fecha", "width": 100}, 
                    {"text": "Concepto", "width": 300, "anchor": CENTER}, 
                    {"text": "Tipo", "width": 100, "anchor": CENTER}, 
                    {"text": "Monto", "width": 150}, 
                    {"text": "Saldo", "width": 150}
                    ]
         
-        self.table = Tableview(self.top, coldata=coldata, searchable=True, paginated=True)
+        self.table = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
         
-        ttk.Style().configure("Treeview.Heading", font=("Robot bold", 14))
+        ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
         ttk.Style().configure("Treeview", font=("Open Sans", 11))
         ttk.Style().map("Treeview", rowheight=[("!disabled", 22)])
         
@@ -172,7 +180,8 @@ class VentanaTransacciones:
                                     
             self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
 
-        self.table.pack(expand=True, fill=BOTH)
+        self.table.pack(side=LEFT, expand=True, fill=BOTH)
+        
         self.table.load_table_data()
         
 if __name__ == "__main__":
