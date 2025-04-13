@@ -2,9 +2,12 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
 from ttkbootstrap.tableview import Tableview
+from tkinter import filedialog
+import xlsxwriter
 from datetime import datetime
 import json
 import os
+import pandas as pd
 
 class IngresosEgresos:
     def __init__(self,  master):
@@ -141,7 +144,51 @@ class IngresosEgresos:
     
     def abrir_ventana_transacciones(self):
         VentanaTransacciones(self.master, self.transacciones)
-        
+    
+    def generar_excel(self):
+        try:
+            df = pd.DataFrame(self.transacciones)
+            df.rename(columns={"fecha": "Fecha", "concepto": "Concepto", "tipo": "Tipo", "monto": "Monto"}, inplace=True)
+            
+            total = 0
+            array_total = []
+            for transaccion in self.transacciones:
+                if transaccion["tipo"] == "Ingreso":
+                    total += transaccion["monto"]
+                elif transaccion["tipo"] == "Egreso":
+                    total -= transaccion["monto"]
+                array_total.append(total)
+                
+            df["Saldo"] = array_total
+            df.insert(0, "Codigo","")
+            
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Guardar archivo de excel") 
+            
+            if file_path:
+                writer = pd.ExcelWriter(file_path, engine="xlsxwriter")
+                df.to_excel(writer, index=False, sheet_name="Transacciones")
+                
+                workbook = writer.book
+                worksheet = writer.sheets["Transacciones"]
+                worksheet.set_column(0, 0, 10)
+                worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
+                worksheet.set_column(2, 2, 40)
+                worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
+                
+                header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                
+                
+                for col_num, value in enumerate(df.columns.values):
+                    worksheet.write(0, col_num, value, header_format)
+                        
+                writer.close()
+                Messagebox.show_info("Archivo excel generado exitosamente","EXITO")
+                return
+            else:
+                Messagebox.show_error("Se cancelo el guardado del archivo excel","ERROR")
+                return
+        except Exception as e:
+            Messagebox.show_error(f"No se pudo generar el archivo excel: {e}","ERROR")
+            return
 class VentanaTransacciones:
     def __init__(self, master, transacciones):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
