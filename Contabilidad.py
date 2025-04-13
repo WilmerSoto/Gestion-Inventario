@@ -152,9 +152,8 @@ class IngresosEgresos:
         VentanaTransacciones(self.master, self.transacciones)
     
     def generar_excel(self):
-        try:
-            df = pd.DataFrame(self.transacciones)
-            df.rename(columns={"fecha": "Fecha", "concepto": "Concepto", "tipo": "Tipo", "monto": "Monto"}, inplace=True)
+        try:            
+            df_transacciones, df_ingresos, df_egresos = self.crear_dataframes()
             
             total = 0
             array_total = []
@@ -165,26 +164,35 @@ class IngresosEgresos:
                     total -= transaccion["monto"]
                 array_total.append(total)
                 
-            df["Saldo"] = array_total
-            df.insert(0, "Codigo","")
+            df_transacciones["Saldo"] = array_total
+            df_transacciones.insert(0, "Codigo","")
             
             file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Guardar archivo de excel") 
             
             if file_path:
                 writer = pd.ExcelWriter(file_path, engine="xlsxwriter")
-                df.to_excel(writer, index=False, sheet_name="Transacciones")
+                df_transacciones.to_excel(writer, index=False, sheet_name="Transacciones")
+                df_ingresos.to_excel(writer, index=False, sheet_name="Ingresos")
+                df_egresos.to_excel(writer, index=False, sheet_name="Egresos")
                 
                 workbook = writer.book
-                worksheet = writer.sheets["Transacciones"]
-                worksheet.set_column(0, 0, 10)
-                worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
-                worksheet.set_column(2, 2, 40)
-                worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
+                worksheet_transacciones = writer.sheets["Transacciones"]
+                worksheet_ingresos = writer.sheets["Ingresos"]
+                worksheet_egresos = writer.sheets["Egresos"]
+                
+                for worksheeet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
+                    worksheeet.set_column(0, 0, 10)
+                    worksheeet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
+                    worksheeet.set_column(2, 2, 40)
+                    worksheeet.set_column(4, 4, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
+            
+                worksheet_transacciones.set_column(5, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
                 
                 header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                
                 
-                for col_num, value in enumerate(df.columns.values):
-                    worksheet.write(0, col_num, value, header_format)
+                for df, worksheet in zip([df_transacciones, df_ingresos, df_egresos], [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]):
+                    for col_num, value in enumerate(df.columns.values):                        
+                        worksheet.write(0, col_num, value, header_format)
                         
                 writer.close()
                 Messagebox.show_info("Archivo excel generado exitosamente","EXITO")
@@ -195,6 +203,26 @@ class IngresosEgresos:
         except Exception as e:
             Messagebox.show_error(f"No se pudo generar el archivo excel: {e}","ERROR")
             return
+
+    def crear_dataframes(self):
+        array_ingresos = []
+        array_egresos = []
+        
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                array_ingresos.append(transaccion)
+            elif transaccion["tipo"] == "Egreso":
+                array_egresos.append(transaccion)
+                
+        df_transacciones = pd.DataFrame(self.transacciones)
+        df_ingresos = pd.DataFrame(array_ingresos)
+        df_egresos = pd.DataFrame(array_egresos)
+        
+        for df in [df_transacciones, df_ingresos, df_egresos]:
+            df.rename(columns={"fecha": "Fecha", "concepto": "Concepto", "tipo": "Tipo", "monto": "Monto"}, inplace=True)
+
+        return df_transacciones, df_ingresos, df_egresos
+              
 class VentanaTransacciones:
     def __init__(self, master, transacciones):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
