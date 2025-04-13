@@ -16,7 +16,7 @@ class IngresosEgresos:
         ttk.Style().configure("TLabel", font=("Open Sans bold", 12))
         ttk.Style().configure("TButton", font=("Open Sans bold", 10))
 
-        master.geometry("380x380")
+        master.geometry("385x410")
         master.resizable(False, False)
         
         self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
@@ -29,36 +29,41 @@ class IngresosEgresos:
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
                 
-        ttk.Label(master, text="Concepto").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.input_concepto = ttk.Entry(master, font=("Open Sans", 10))
-        self.input_concepto.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(master, text="Concepto Ingreso").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.input_concepto_ingreso = ttk.Entry(master, font=("Open Sans", 10))
+        self.input_concepto_ingreso.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         
         ttk.Label(master, text="Ingresos").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.input_ingreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_ingreso.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-
-        ttk.Label(master, text="Egresos").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-        self.input_egreso = ttk.Entry(master, font=("Open Sans", 10))
-        self.input_egreso.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(master, text="Saldo").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Concepto Egreso").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.input_concepto_egreso = ttk.Entry(master, font=("Open Sans", 10))
+        self.input_concepto_egreso.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
+
+        ttk.Label(master, text="Egresos").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        self.input_egreso = ttk.Entry(master, font=("Open Sans", 10))
+        self.input_egreso.grid(row=4, column=1, padx=5, pady=5, sticky="ew")
+        
+        ttk.Label(master, text="Saldo").grid(row=5, column=0, padx=5, pady=5, sticky="w")
         self.var_total = ttk.StringVar(value="$ 0")
-        ttk.Label(master, textvariable=self.var_total).grid(row=4, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(master, textvariable=self.var_total).grid(row=5, column=1, padx=5, pady=5, sticky="ew")
         self.actualizar_label_total()
         
         self.btn_añadir = ttk.Button(master, text="Añadir transaccion", command=self.añadir_transaccion)
-        self.btn_añadir.grid(row=5, column=0, columnspan=2, padx=5, pady=10)
+        self.btn_añadir.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
         
         self.btn_revisar_lista = ttk.Button(master, text="Revisar lista de transacciones", command=self.abrir_ventana_transacciones)
-        self.btn_revisar_lista.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
+        self.btn_revisar_lista.grid(row=7, column=0, columnspan=2, padx=5, pady=10)
         
         self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=self.generar_excel)
-        self.btn_generar_excel.grid(row=7, column=0, columnspan=2, padx=5, pady=10)
+        self.btn_generar_excel.grid(row=8, column=0, columnspan=2, padx=5, pady=10)
     
     def añadir_transaccion(self):
         fecha = self.date_transaccion.entry.get()
-        concepto = self.input_concepto.get()
+        concepto_ingreso = self.input_concepto_ingreso.get()
         ingreso = self.input_ingreso.get()
+        concepto_egreso = self.input_concepto_egreso.get()
         egreso = self.input_egreso.get()
         
         try:
@@ -73,10 +78,10 @@ class IngresosEgresos:
             return
         
         if ingreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto, "Ingreso", ingreso_monto))
+            self.transacciones.append(self.crear_transaccion(fecha, concepto_ingreso, "Ingreso", ingreso_monto))
         
         if egreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto, "Egreso", egreso_monto))
+            self.transacciones.append(self.crear_transaccion(fecha, concepto_egreso, "Egreso", egreso_monto))
 
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
         
@@ -87,8 +92,9 @@ class IngresosEgresos:
         today = str(datetime.now().date())
         self.date_transaccion.entry.delete(0, ttk.END)
         self.date_transaccion.entry.insert(ttk.END, today)
-        self.input_concepto.delete(0, ttk.END)
+        self.input_concepto_ingreso.delete(0, ttk.END)
         self.input_ingreso.delete(0, ttk.END)
+        self.input_concepto_egreso.delete(0, ttk.END)
         self.input_egreso.delete(0, ttk.END)
         
     def crear_transaccion(self, fecha, concepto, tipo, monto):
@@ -209,6 +215,9 @@ class VentanaTransacciones:
         self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self.lista_combinada)
         self.btn_ambos.pack(side=LEFT, padx=10, pady=10)
         
+        self.btn_borrar = ttk.Button(self.frame_btn, text="Borrar fila", command=self.borrar_transacciones)
+        self.btn_borrar.pack(side=LEFT, padx=10, pady=10)
+        
         self.coldata = [{"text": "Fecha", "width": 100}, 
                    {"text": "Concepto", "width": 300, "anchor": CENTER}, 
                    {"text": "Tipo", "width": 100, "anchor": CENTER}, 
@@ -217,16 +226,30 @@ class VentanaTransacciones:
                    ]
         self.coldata_no_saldo = self.coldata.copy()[:-1]        
         self.lista_combinada()
+        
+    # CORREGIR EL PROBLEMA DE QUE NO SE PUEDE BORRAR LA FILA SELECCIONADA. Tener en cuenta las tres tablas
+    # y que se pueda borrar la fila seleccionada de la tabla combinada o de las tablas separadas.
+    # TO-DO: Añadir tipos de gastos y ingresos
+    def borrar_transacciones(self):
+        try:
+            selected_items = self.table_combinada.selection_get()
+            print(selected_items)
+        except Exception as e:
+            Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
+            return
     
     def lista_combinada(self):
         self.top.geometry("804x450")
         
+        if hasattr(self, "table_combinada"):
+            self.table_combinada.destroy()
         if hasattr(self, "table"):
             self.table.destroy()
         if hasattr(self, "table2"):
             self.table2.destroy()
             
-        self.table = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
+        self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
+        self.table_combinada.bind("<Double-1>", lambda event: self.separar_por_tipos())
                 
         total = 0
         for transaccion in self.transacciones:
@@ -234,15 +257,16 @@ class VentanaTransacciones:
                 total += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
                 total -= transaccion["monto"]
-            self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
+            self.table_combinada.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
             
-        self.table.pack(side=LEFT, expand=True, fill=BOTH)
-        self.table.load_table_data()
+        self.table_combinada.pack(side=LEFT, expand=True, fill=BOTH)
+        self.table_combinada.load_table_data()
 
-    
     def separar_por_tipos(self):
         self.top.geometry("1308x450")
         
+        if hasattr(self, "table_combinada"):
+            self.table_combinada.destroy()
         if hasattr(self, "table"):
             self.table.destroy()
         if hasattr(self, "table2"):
