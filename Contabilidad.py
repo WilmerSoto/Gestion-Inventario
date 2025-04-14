@@ -23,9 +23,9 @@ class IngresosEgresos:
         
         self.total_transacciones = 0
         
-        archivo = ManejoArchivos(path)
+        self.archivo = ManejoArchivo(path)
+        self.transacciones = self.archivo.cargar_transacciones()
         self.calcular_total()
-        self.transacciones = archivo.cargar_transacciones()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
@@ -59,38 +59,14 @@ class IngresosEgresos:
         self.btn_revisar_lista = ttk.Button(master, text="Revisar lista de transacciones", command=self.abrir_ventana_transacciones)
         self.btn_revisar_lista.grid(row=7, column=0, columnspan=2, padx=5, pady=10)
         
-        self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=self.generar_excel)
+        self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=self)
         self.btn_generar_excel.grid(row=8, column=0, columnspan=2, padx=5, pady=10)
     
     def añadir_transaccion(self):
-        fecha = self.date_transaccion.entry.get()
-        concepto_ingreso = self.input_concepto_ingreso.get()
-        ingreso = self.input_ingreso.get()
-        concepto_egreso = self.input_concepto_egreso.get()
-        egreso = self.input_egreso.get()
-        
-        try:
-            ingreso_monto = int(ingreso) if ingreso else 0
-            egreso_monto = int(egreso) if egreso else 0
-        except ValueError:
-            Messagebox.show_error("Los valores de ingreso y/o egresos debe ser numericos","ERROR")
-            return
-        
-        if ingreso_monto == 0 and egreso_monto == 0:
-            Messagebox.show_error("Deber haber un valor de ingreso o egreso como minimo","ERROR")
-            return
-        
-        if ingreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto_ingreso, "Ingreso", ingreso_monto))
-        
-        if egreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto_egreso, "Egreso", egreso_monto))
-
-        Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
+        self.archivo.añadir_transaccion(self.date_transaccion, self.input_concepto_ingreso, self.input_ingreso, self.input_concepto_egreso, self.input_egreso)
         
         self.calcular_total()
         self.actualizar_label_total()
-        self.guardar_transacciones()
         
         today = str(datetime.now().date())
         self.date_transaccion.entry.delete(0, ttk.END)
@@ -110,23 +86,7 @@ class IngresosEgresos:
         
     def actualizar_label_total(self):
         self.var_total.set(f"$ {self.total_transacciones:,.0f}")
-
-    def guardar_transacciones(self):
-        expanded_path = os.path.expanduser(self.path)
-        directory = os.path.dirname(expanded_path)
-        if not os.path.exists(directory):
-            try:
-                os.makedirs(directory)
-            except OSError as e:
-                Messagebox().show_error(f"No se pudo crear el directorio: {e}","ERROR")
-                return
-        
-        try:
-            with open(expanded_path, "w") as f:
-                json.dump(self.transacciones, f, indent=4)
-        except Exception as e:
-            Messagebox().show_error(f"No se pudo guardar las transacciones: {e}","ERROR")
-        
+      
     def calcular_total(self):
         self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
         
@@ -139,89 +99,7 @@ class IngresosEgresos:
     
     def abrir_ventana_transacciones(self):
         VentanaTransacciones(self.transacciones)
-    
-    def generar_excel(self):
-        try:                
-            df_transacciones, df_ingresos, df_egresos = self.crear_dataframes()            
-            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Guardar archivo de excel") 
-            
-            if file_path:
-                writer = pd.ExcelWriter(file_path, engine="xlsxwriter")
-                df_transacciones.to_excel(writer, index=False, sheet_name="Transacciones")
-                df_ingresos.to_excel(writer, index=False, sheet_name="Ingresos")
-                df_egresos.to_excel(writer, index=False, sheet_name="Egresos")
-                
-                workbook = writer.book
-                worksheet_transacciones = writer.sheets["Transacciones"]
-                worksheet_ingresos = writer.sheets["Ingresos"]
-                worksheet_egresos = writer.sheets["Egresos"]
-                
-                self.formato_hojas(workbook, worksheet_transacciones, worksheet_ingresos, worksheet_egresos, df_transacciones, df_ingresos, df_egresos)
-                      
-                writer.close()
-                Messagebox.show_info("Archivo excel generado exitosamente","EXITO")
-                return
-            else:
-                Messagebox.show_error("Se cancelo el guardado del archivo excel","ERROR")
-                return
-        except Exception as e:
-            Messagebox.show_error(f"No se pudo generar el archivo excel: {e}","ERROR")
-            return
-
-    def formato_hojas(self, workbook, worksheet_transacciones, worksheet_ingresos, worksheet_egresos, df_transacciones, df_ingresos, df_egresos):     
-        for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
-            worksheet.set_column(0, 0, 10)
-            worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
-            worksheet.set_column(2, 2, 40)
-            worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
-                                
-        header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                
-                
-        for df, worksheet in zip([df_transacciones, df_ingresos, df_egresos], [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]):
-            for col_num, value in enumerate(df.columns.values):                        
-                worksheet.write(0, col_num, value, header_format)
         
-        index_ingreso = 2
-        index_egreso = 2
-        
-        for i, transaccion in enumerate(self.transacciones):
-            if transaccion["tipo"] == "Ingreso":
-                worksheet_transacciones.write_formula(f"A{i+2}", f"=Ingresos!A{index_ingreso}")
-                index_ingreso += 1
-            elif transaccion["tipo"] == "Egreso":
-                worksheet_transacciones.write_formula(f"A{i+2}", f"=Egresos!A{index_egreso}")
-                index_egreso += 1 
-
-    def crear_dataframes(self):
-        array_ingresos = []
-        array_egresos = []
-        
-        for transaccion in self.transacciones:
-            if transaccion["tipo"] == "Ingreso":
-                array_ingresos.append(transaccion)
-            elif transaccion["tipo"] == "Egreso":
-                array_egresos.append(transaccion)
-                
-        df_transacciones = pd.DataFrame(self.transacciones)
-        df_ingresos = pd.DataFrame(array_ingresos)
-        df_egresos = pd.DataFrame(array_egresos)
-        
-        for df in [df_transacciones, df_ingresos, df_egresos]:
-            df.rename(columns={"fecha": "Fecha", "concepto": "Concepto", "tipo": "Tipo", "monto": "Monto"}, inplace=True)
-            df.insert(0, "Codigo","")
-
-        total = 0
-        array_total = []
-        for transaccion in self.transacciones:
-            if transaccion["tipo"] == "Ingreso":
-                total += transaccion["monto"]
-            elif transaccion["tipo"] == "Egreso":
-                total -= transaccion["monto"]
-            array_total.append(total)
-            
-        df_transacciones["Saldo"] = array_total
-        return df_transacciones, df_ingresos, df_egresos
-              
 class VentanaTransacciones:
     def __init__(self, transacciones):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
@@ -320,7 +198,7 @@ class VentanaTransacciones:
         self.table.load_table_data()
         self.table2.load_table_data()
         
-class ManejoArchivos:
+class ManejoArchivo:
     def __init__(self, path):
         self.path = path
     
@@ -353,8 +231,129 @@ class ManejoArchivos:
             transacciones = []
             
         return transacciones
-      
+
+    def añadir_transaccion(self, date_transaccion, input_concepto_ingreso, input_ingreso, input_concepto_egreso, input_egreso):
+        fecha = date_transaccion.entry.get()
+        concepto_ingreso = input_concepto_ingreso.get()
+        ingreso = input_ingreso.get()
+        concepto_egreso = input_concepto_egreso.get()
+        egreso = input_egreso.get()
+        
+        try:
+            ingreso_monto = int(ingreso) if ingreso else 0
+            egreso_monto = int(egreso) if egreso else 0
+        except ValueError:
+            Messagebox.show_error("Los valores de ingreso y/o egresos debe ser numericos","ERROR")
+            return
+        
+        if ingreso_monto == 0 and egreso_monto == 0:
+            Messagebox.show_error("Deber haber un valor de ingreso o egreso como minimo","ERROR")
+            return
+        
+        if ingreso_monto > 0:
+            self.transacciones.append(self.crear_transaccion(fecha, concepto_ingreso, "Ingreso", ingreso_monto))
+        
+        if egreso_monto > 0:
+            self.transacciones.append(self.crear_transaccion(fecha, concepto_egreso, "Egreso", egreso_monto))
+
+        Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
+        
+        self.archivo.guardar_transacciones(self.transacciones)
+        
+    def crear_transaccion(self, fecha, concepto, tipo, monto):
+        return {
+            "fecha": fecha,
+            "concepto": concepto,
+            "tipo": tipo,
+            "monto": monto
+        }
+
+class ManejoExcel:
+    def __init__(self, transacciones):
+        self.transacciones = transacciones
     
+    def generar_excel(self):
+        try:                
+            df_transacciones, df_ingresos, df_egresos = self.crear_dataframes()            
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Guardar archivo de excel") 
+            
+            if file_path:
+                writer = pd.ExcelWriter(file_path, engine="xlsxwriter")
+                df_transacciones.to_excel(writer, index=False, sheet_name="Transacciones")
+                df_ingresos.to_excel(writer, index=False, sheet_name="Ingresos")
+                df_egresos.to_excel(writer, index=False, sheet_name="Egresos")
+                
+                workbook = writer.book
+                worksheet_transacciones = writer.sheets["Transacciones"]
+                worksheet_ingresos = writer.sheets["Ingresos"]
+                worksheet_egresos = writer.sheets["Egresos"]
+                
+                self.formato_hojas(workbook, worksheet_transacciones, worksheet_ingresos, worksheet_egresos, df_transacciones, df_ingresos, df_egresos)
+                      
+                writer.close()
+                Messagebox.show_info("Archivo excel generado exitosamente","EXITO")
+                return
+            else:
+                Messagebox.show_error("Se cancelo el guardado del archivo excel","ERROR")
+                return
+        except Exception as e:
+            Messagebox.show_error(f"No se pudo generar el archivo excel: {e}","ERROR")
+            return
+    
+    def formato_hojas(self, workbook, worksheet_transacciones, worksheet_ingresos, worksheet_egresos, df_transacciones, df_ingresos, df_egresos):     
+        for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
+            worksheet.set_column(0, 0, 10)
+            worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
+            worksheet.set_column(2, 2, 40)
+            worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
+                                
+        header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                
+                
+        for df, worksheet in zip([df_transacciones, df_ingresos, df_egresos], [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]):
+            for col_num, value in enumerate(df.columns.values):                        
+                worksheet.write(0, col_num, value, header_format)
+        
+        index_ingreso = 2
+        index_egreso = 2
+        
+        for i, transaccion in enumerate(self.transacciones):
+            if transaccion["tipo"] == "Ingreso":
+                worksheet_transacciones.write_formula(f"A{i+2}", f"=Ingresos!A{index_ingreso}")
+                index_ingreso += 1
+            elif transaccion["tipo"] == "Egreso":
+                worksheet_transacciones.write_formula(f"A{i+2}", f"=Egresos!A{index_egreso}")
+                index_egreso += 1
+        
+    def crear_dataframes(self):
+        array_ingresos = []
+        array_egresos = []
+        
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                array_ingresos.append(transaccion)
+            elif transaccion["tipo"] == "Egreso":
+                array_egresos.append(transaccion)
+                
+        df_transacciones = pd.DataFrame(self.transacciones)
+        df_ingresos = pd.DataFrame(array_ingresos)
+        df_egresos = pd.DataFrame(array_egresos)
+        
+        for df in [df_transacciones, df_ingresos, df_egresos]:
+            df.rename(columns={"fecha": "Fecha", "concepto": "Concepto", "tipo": "Tipo", "monto": "Monto"}, inplace=True)
+            df.insert(0, "Codigo","")
+
+        total = 0
+        array_total = []
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                total += transaccion["monto"]
+            elif transaccion["tipo"] == "Egreso":
+                total -= transaccion["monto"]
+            array_total.append(total)
+            
+        df_transacciones["Saldo"] = array_total
+        return df_transacciones, df_ingresos, df_egresos
+          
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
     app = IngresosEgresos(root)
