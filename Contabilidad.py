@@ -162,22 +162,7 @@ class IngresosEgresos:
                 df_ingresos.to_excel(writer, index=False, sheet_name="Ingresos")
                 df_egresos.to_excel(writer, index=False, sheet_name="Egresos")
                 
-                workbook = writer.book
-                worksheet_transacciones = writer.sheets["Transacciones"]
-                worksheet_ingresos = writer.sheets["Ingresos"]
-                worksheet_egresos = writer.sheets["Egresos"]
-                
-                for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
-                    worksheet.set_column(0, 0, 10)
-                    worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
-                    worksheet.set_column(2, 2, 40)
-                    worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
-                                
-                header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                
-                
-                for df, worksheet in zip([df_transacciones, df_ingresos, df_egresos], [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]):
-                    for col_num, value in enumerate(df.columns.values):                        
-                        worksheet.write(0, col_num, value, header_format)
+                self.formato_hojas(df_transacciones, df_ingresos, df_egresos, writer)
                         
                 writer.close()
                 Messagebox.show_info("Archivo excel generado exitosamente","EXITO")
@@ -188,6 +173,24 @@ class IngresosEgresos:
         except Exception as e:
             Messagebox.show_error(f"No se pudo generar el archivo excel: {e}","ERROR")
             return
+
+    def formato_hojas(self, df_transacciones, df_ingresos, df_egresos, writer):
+        workbook = writer.book
+        worksheet_transacciones = writer.sheets["Transacciones"]
+        worksheet_ingresos = writer.sheets["Ingresos"]
+        worksheet_egresos = writer.sheets["Egresos"]
+                
+        for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
+            worksheet.set_column(0, 0, 10)
+            worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
+            worksheet.set_column(2, 2, 40)
+            worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
+                                
+        header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                
+                
+        for df, worksheet in zip([df_transacciones, df_ingresos, df_egresos], [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]):
+            for col_num, value in enumerate(df.columns.values):                        
+                worksheet.write(0, col_num, value, header_format)
 
     def crear_dataframes(self):
         array_ingresos = []
