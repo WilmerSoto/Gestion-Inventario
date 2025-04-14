@@ -94,27 +94,9 @@ class IngresosEgresos:
         self.input_ingreso.delete(0, ttk.END)
         self.input_concepto_egreso.delete(0, ttk.END)
         self.input_egreso.delete(0, ttk.END)
-        
-    def crear_transaccion(self, fecha, concepto, tipo, monto):
-        return {
-            "fecha": fecha,
-            "concepto": concepto,
-            "tipo": tipo,
-            "monto": monto
-        }
-        
+           
     def actualizar_label_total(self, total):
         self.var_total.set(f"$ {total:,.0f}")
-      
-    def calcular_total(self):
-        self.repo_transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
-        
-        self.total_transacciones = 0
-        for transaccion in self.repo_transacciones:
-            if transaccion["tipo"] == "Ingreso":
-                self.total_transacciones += transaccion["monto"]
-            elif transaccion["tipo"] == "Egreso":
-                self.total_transacciones -= transaccion["monto"]
     
     def abrir_ventana_transacciones(self):
         VentanaTransacciones(self.repo_transacciones)
