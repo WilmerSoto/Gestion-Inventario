@@ -199,7 +199,6 @@ class VentanaTransacciones:
         self.table.load_table_data()
         self.table2.load_table_data()
 
-#WIP: Refactor de la forma de guardar y cargar el archivo json. Manejar el archivo de transacciones en un solo lugar.
 class RepositorioTransacciones:
     def __init__(self, path):
         self.path = path
@@ -242,7 +241,6 @@ class RepositorioTransacciones:
         return transacciones
 
     def añadir_transaccion(self, transaccion: TransaccionFormulario):
-        
         transaccion_ingreso = self.crear_transaccion(transaccion.fecha, transaccion.concepto_ingreso, "Ingreso", transaccion.monto_ingreso)
         
         transaccion_egreso = self.crear_transaccion(transaccion.fecha, transaccion.concepto_egreso, "Egreso", transaccion.monto_egreso)
