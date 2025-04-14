@@ -162,8 +162,13 @@ class IngresosEgresos:
                 df_ingresos.to_excel(writer, index=False, sheet_name="Ingresos")
                 df_egresos.to_excel(writer, index=False, sheet_name="Egresos")
                 
-                self.formato_hojas(df_transacciones, df_ingresos, df_egresos, writer)
-                        
+                workbook = writer.book
+                worksheet_transacciones = writer.sheets["Transacciones"]
+                worksheet_ingresos = writer.sheets["Ingresos"]
+                worksheet_egresos = writer.sheets["Egresos"]
+                
+                self.formato_hojas(workbook, worksheet_transacciones, worksheet_ingresos, worksheet_egresos, df_transacciones, df_ingresos, df_egresos)
+                      
                 writer.close()
                 Messagebox.show_info("Archivo excel generado exitosamente","EXITO")
                 return
@@ -174,12 +179,7 @@ class IngresosEgresos:
             Messagebox.show_error(f"No se pudo generar el archivo excel: {e}","ERROR")
             return
 
-    def formato_hojas(self, df_transacciones, df_ingresos, df_egresos, writer):
-        workbook = writer.book
-        worksheet_transacciones = writer.sheets["Transacciones"]
-        worksheet_ingresos = writer.sheets["Ingresos"]
-        worksheet_egresos = writer.sheets["Egresos"]
-                
+    def formato_hojas(self, workbook, worksheet_transacciones, worksheet_ingresos, worksheet_egresos, df_transacciones, df_ingresos, df_egresos):     
         for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
             worksheet.set_column(0, 0, 10)
             worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
@@ -191,6 +191,17 @@ class IngresosEgresos:
         for df, worksheet in zip([df_transacciones, df_ingresos, df_egresos], [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]):
             for col_num, value in enumerate(df.columns.values):                        
                 worksheet.write(0, col_num, value, header_format)
+        
+        index_ingreso = 2
+        index_egreso = 2
+        
+        for i, transaccion in enumerate(self.transacciones):
+            if transaccion["tipo"] == "Ingreso":
+                worksheet_transacciones.write_formula(f"A{i+2}", f"=Ingresos!A{index_ingreso}")
+                index_ingreso += 1
+            elif transaccion["tipo"] == "Egreso":
+                worksheet_transacciones.write_formula(f"A{i+2}", f"=Egresos!A{index_egreso}")
+                index_egreso += 1 
 
     def crear_dataframes(self):
         array_ingresos = []
