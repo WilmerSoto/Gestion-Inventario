@@ -201,8 +201,10 @@ class VentanaTransacciones:
 class ManejoArchivo:
     def __init__(self, path):
         self.path = path
+        self.transacciones = []
     
     def guardar_transacciones(self, transacciones):
+        self.transacciones = transacciones
         expanded_path = os.path.expanduser(self.path)
         directory = os.path.dirname(expanded_path)
         if not os.path.exists(directory):
@@ -213,24 +215,23 @@ class ManejoArchivo:
                 return
         try:
             with open(expanded_path, "w") as f:
-                json.dump(transacciones, f, indent=4)
+                json.dump(self.transacciones, f, indent=4)
         except Exception as e:
             Messagebox().show_error(f"No se pudo guardar las transacciones: {e}","ERROR")
 
     def cargar_transacciones(self):
         expanded_path =  os.path.expanduser(self.path)
-        transacciones = []
         try:
             if os.path.exists(expanded_path):
                 with open(expanded_path, "r") as f:
-                    transacciones = json.load(f)
+                    self.transacciones = json.load(f)
             else:
-                transacciones = []
+                self.transacciones = []
         except Exception as e:
             Messagebox.show_error(f"No se pudo cargar las transacciones: {e}","ERROR")
-            transacciones = []
+            self.transacciones = []
             
-        return transacciones
+        return self.transacciones
 
     def añadir_transaccion(self, date_transaccion, input_concepto_ingreso, input_ingreso, input_concepto_egreso, input_egreso):
         fecha = date_transaccion.entry.get()
@@ -258,7 +259,7 @@ class ManejoArchivo:
 
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
         
-        self.archivo.guardar_transacciones(self.transacciones)
+        self.guardar_transacciones(self.transacciones)
         
     def crear_transaccion(self, fecha, concepto, tipo, monto):
         return {
