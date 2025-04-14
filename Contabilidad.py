@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
@@ -9,8 +10,22 @@ import json
 import os
 import pandas as pd
 
+@dataclass         
+class TransaccionFormulario:
+    fecha: str
+    concepto_ingreso: str
+    monto_ingreso: int
+    concepto_egreso: str
+    monto_egreso: int
+    
+    def __post_init__(self):
+        if self.monto_ingreso == 0 and self.monto_egreso == 0:
+            raise ValueError("Debe haber un valor de ingreso o egreso como mínimo")
+        
+        if self.monto_ingreso < 0 or self.monto_egreso < 0:
+            raise ValueError("Los valores de ingreso y/o egreso deben ser positivos")
 class IngresosEgresos:
-    def __init__(self,  master):
+    def __init__(self,  master, repo_transacciones):
         self.master = master
         master.title("Gestion de Transacciones")
         ttk.Style().configure("TLabel", font=("Open Sans bold", 12))
@@ -19,13 +34,9 @@ class IngresosEgresos:
         master.geometry("385x410")
         master.resizable(False, False)
         
-        path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
-        
+        self.repo_transacciones = repo_transacciones
         self.total_transacciones = 0
-        
-        self.archivo = ManejoArchivo(path)
-        self.transacciones = self.archivo.cargar_transacciones()
-        total = self.archivo.calcular_total()
+        total = self.repo_transacciones.calcular_total()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
@@ -63,9 +74,17 @@ class IngresosEgresos:
         self.btn_generar_excel.grid(row=8, column=0, columnspan=2, padx=5, pady=10)
     
     def añadir_transaccion(self):
-        self.archivo.añadir_transaccion(self.date_transaccion, self.input_concepto_ingreso, self.input_ingreso, self.input_concepto_egreso, self.input_egreso)
+        transaccion = TransaccionFormulario(
+            fecha=self.date_transaccion.get_date(),
+            concepto_ingreso=self.input_concepto_ingreso.get(),
+            monto_ingreso=int(self.input_ingreso.get() or 0),
+            concepto_egreso=self.input_concepto_egreso.get(),
+            monto_egreso=int(self.input_egreso.get() or 0)
+        )
         
-        total = self.archivo.calcular_total()
+        self.repo_transacciones.añadir_transaccion(transaccion)
+        
+        total = self.repo_transacciones.calcular_total()
         self.actualizar_label_total(total)
         
         today = str(datetime.now().date())
@@ -88,17 +107,17 @@ class IngresosEgresos:
         self.var_total.set(f"$ {total:,.0f}")
       
     def calcular_total(self):
-        self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
+        self.repo_transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
         
         self.total_transacciones = 0
-        for transaccion in self.transacciones:
+        for transaccion in self.repo_transacciones:
             if transaccion["tipo"] == "Ingreso":
                 self.total_transacciones += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
                 self.total_transacciones -= transaccion["monto"]
     
     def abrir_ventana_transacciones(self):
-        VentanaTransacciones(self.transacciones)
+        VentanaTransacciones(self.repo_transacciones)
         
 class VentanaTransacciones:
     def __init__(self, transacciones):
@@ -197,16 +216,20 @@ class VentanaTransacciones:
 
         self.table.load_table_data()
         self.table2.load_table_data()
-        
-class ManejoArchivo:
+
+#WIP: Refactor de la forma de guardar y cargar el archivo json. Manejar el archivo de transacciones en un solo lugar.
+class RepositorioTransacciones:
     def __init__(self, path):
         self.path = path
-        self.transacciones = []
+        self.transacciones = self.cargar_transacciones()
+    
+    def obtener_transacciones(self):
+        return self.transacciones
     
     def guardar_transacciones(self, transacciones):
-        self.transacciones = transacciones
         expanded_path = os.path.expanduser(self.path)
         directory = os.path.dirname(expanded_path)
+        
         if not os.path.exists(directory):
             try:
                 os.makedirs(directory)
@@ -215,63 +238,54 @@ class ManejoArchivo:
                 return
         try:
             with open(expanded_path, "w") as f:
-                json.dump(self.transacciones, f, indent=4)
+                json.dump(transacciones, f, indent=4)
+                self.transacciones = transacciones
         except Exception as e:
             Messagebox().show_error(f"No se pudo guardar las transacciones: {e}","ERROR")
 
     def cargar_transacciones(self):
         expanded_path =  os.path.expanduser(self.path)
+        transacciones = []
         try:
             if os.path.exists(expanded_path):
                 with open(expanded_path, "r") as f:
-                    self.transacciones = json.load(f)
+                    transacciones = json.load(f)
             else:
-                self.transacciones = []
+                transacciones = []
         except Exception as e:
             Messagebox.show_error(f"No se pudo cargar las transacciones: {e}","ERROR")
-            self.transacciones = []
-            
-        return self.transacciones
+            transacciones = []
+        
+        transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
+        return transacciones
 
-    def añadir_transaccion(self, date_transaccion, input_concepto_ingreso, input_ingreso, input_concepto_egreso, input_egreso):
-        fecha = date_transaccion.entry.get()
-        concepto_ingreso = input_concepto_ingreso.get()
-        ingreso = input_ingreso.get()
-        concepto_egreso = input_concepto_egreso.get()
-        egreso = input_egreso.get()
+    def añadir_transaccion(self, transaccion: TransaccionFormulario):
         
-        try:
-            ingreso_monto = int(ingreso) if ingreso else 0
-            egreso_monto = int(egreso) if egreso else 0
-        except ValueError:
-            Messagebox.show_error("Los valores de ingreso y/o egresos debe ser numericos","ERROR")
-            return
+        transaccion_ingreso = self.crear_transaccion(transaccion.fecha, transaccion.concepto_ingreso, "Ingreso", transaccion.monto_ingreso)
         
-        if ingreso_monto == 0 and egreso_monto == 0:
-            Messagebox.show_error("Deber haber un valor de ingreso o egreso como minimo","ERROR")
-            return
+        transaccion_egreso = self.crear_transaccion(transaccion.fecha, transaccion.concepto_egreso, "Egreso", transaccion.monto_egreso)
         
-        if ingreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto_ingreso, "Ingreso", ingreso_monto))
-        
-        if egreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto_egreso, "Egreso", egreso_monto))
+        if transaccion_ingreso:
+            self.transacciones.append(transaccion_ingreso)
+        if transaccion_egreso:
+            self.transacciones.append(transaccion_egreso)
 
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
         
         self.guardar_transacciones(self.transacciones)
         
     def crear_transaccion(self, fecha, concepto, tipo, monto):
-        return {
-            "fecha": fecha,
-            "concepto": concepto,
-            "tipo": tipo,
-            "monto": monto
-        }
+        if monto > 0:
+            return {
+                "fecha": fecha,
+                "concepto": concepto,
+                "tipo": tipo,
+                "monto": monto
+            }
+        else:
+            return None
     
-    def calcular_total(self):
-        self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
-        
+    def calcular_total(self):        
         total_transacciones = 0
         for transaccion in self.transacciones:
             if transaccion["tipo"] == "Ingreso":
@@ -366,8 +380,12 @@ class ManejoExcel:
             
         df_transacciones["Saldo"] = array_total
         return df_transacciones, df_ingresos, df_egresos
-          
+    
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
-    app = IngresosEgresos(root)
+    
+    path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
+    repo_transacciones = RepositorioTransacciones(path)
+    
+    app = IngresosEgresos(root, repo_transacciones)
     root.mainloop()
