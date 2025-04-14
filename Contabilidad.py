@@ -19,10 +19,13 @@ class IngresosEgresos:
         master.geometry("385x410")
         master.resizable(False, False)
         
-        self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
-        self.transacciones = []
+        path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
+        
         self.total_transacciones = 0
-        self.cargar_transacciones()
+        
+        archivo = ManejoArchivos(path)
+        self.calcular_total()
+        self.transacciones = archivo.cargar_transacciones()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
@@ -123,20 +126,6 @@ class IngresosEgresos:
                 json.dump(self.transacciones, f, indent=4)
         except Exception as e:
             Messagebox().show_error(f"No se pudo guardar las transacciones: {e}","ERROR")
-
-    def cargar_transacciones(self):
-        expanded_path =  os.path.expanduser(self.path)
-        try:
-            if os.path.exists(expanded_path):
-                with open(expanded_path, "r") as f:
-                    self.transacciones = json.load(f)
-            else:
-                self.transacciones = []
-        except Exception as e:
-            Messagebox.show_error(f"No se pudo cargar las transacciones: {e}","ERROR")
-            self.transacciones = []
-        
-        self.calcular_total()
         
     def calcular_total(self):
         self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
@@ -149,7 +138,7 @@ class IngresosEgresos:
                 self.total_transacciones -= transaccion["monto"]
     
     def abrir_ventana_transacciones(self):
-        VentanaTransacciones(self.master, self.transacciones)
+        VentanaTransacciones(self.transacciones)
     
     def generar_excel(self):
         try:                
@@ -234,7 +223,7 @@ class IngresosEgresos:
         return df_transacciones, df_ingresos, df_egresos
               
 class VentanaTransacciones:
-    def __init__(self, master, transacciones):
+    def __init__(self, transacciones):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
         self.top.geometry("804x450")
         self.top.resizable(False, False)
@@ -270,8 +259,15 @@ class VentanaTransacciones:
     # TO-DO: Añadir tipos de gastos y ingresos
     def borrar_transacciones(self):
         try:
-            selected_items = self.table_combinada.selection_get()
-            print(selected_items)
+            seleccion_items = self.table_combinada.get_rows(selected=True)
+            for row in seleccion_items:
+                for i, transaccion in enumerate(self.transacciones):
+                    if transaccion["fecha"] == row.values[0] and transaccion["concepto"] == row.values[1] and transaccion["tipo"] == row.values[2] and transaccion["monto"] == int(row.values[3].replace("$", "").replace(",", "").strip()):
+                        del self.transacciones[i]
+                        break
+            
+            IngresosEgresos(self.top.master).guardar_transacciones()
+            
         except Exception as e:
             Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
             return
@@ -287,7 +283,6 @@ class VentanaTransacciones:
             self.table2.destroy()
             
         self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
-        self.table_combinada.bind("<Double-1>", lambda event: self.separar_por_tipos())
                 
         total = 0
         for transaccion in self.transacciones:
@@ -325,6 +320,41 @@ class VentanaTransacciones:
         self.table.load_table_data()
         self.table2.load_table_data()
         
+class ManejoArchivos:
+    def __init__(self, path):
+        self.path = path
+    
+    def guardar_transacciones(self, transacciones):
+        expanded_path = os.path.expanduser(self.path)
+        directory = os.path.dirname(expanded_path)
+        if not os.path.exists(directory):
+            try:
+                os.makedirs(directory)
+            except OSError as e:
+                Messagebox().show_error(f"No se pudo crear el directorio: {e}","ERROR")
+                return
+        try:
+            with open(expanded_path, "w") as f:
+                json.dump(transacciones, f, indent=4)
+        except Exception as e:
+            Messagebox().show_error(f"No se pudo guardar las transacciones: {e}","ERROR")
+
+    def cargar_transacciones(self):
+        expanded_path =  os.path.expanduser(self.path)
+        transacciones = []
+        try:
+            if os.path.exists(expanded_path):
+                with open(expanded_path, "r") as f:
+                    transacciones = json.load(f)
+            else:
+                transacciones = []
+        except Exception as e:
+            Messagebox.show_error(f"No se pudo cargar las transacciones: {e}","ERROR")
+            transacciones = []
+            
+        return transacciones
+      
+    
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
     app = IngresosEgresos(root)
