@@ -167,14 +167,12 @@ class IngresosEgresos:
                 worksheet_ingresos = writer.sheets["Ingresos"]
                 worksheet_egresos = writer.sheets["Egresos"]
                 
-                for worksheeet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
-                    worksheeet.set_column(0, 0, 10)
-                    worksheeet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
-                    worksheeet.set_column(2, 2, 40)
-                    worksheeet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
-            
-                worksheet_transacciones.set_column(5, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
-                
+                for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
+                    worksheet.set_column(0, 0, 10)
+                    worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
+                    worksheet.set_column(2, 2, 40)
+                    worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
+                                
                 header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                
                 
                 for df, worksheet in zip([df_transacciones, df_ingresos, df_egresos], [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]):
