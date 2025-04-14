@@ -25,7 +25,7 @@ class IngresosEgresos:
         
         self.archivo = ManejoArchivo(path)
         self.transacciones = self.archivo.cargar_transacciones()
-        self.calcular_total()
+        total = self.archivo.calcular_total()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
@@ -51,7 +51,7 @@ class IngresosEgresos:
         ttk.Label(master, text="Saldo").grid(row=5, column=0, padx=5, pady=5, sticky="w")
         self.var_total = ttk.StringVar(value="$ 0")
         ttk.Label(master, textvariable=self.var_total).grid(row=5, column=1, padx=5, pady=5, sticky="ew")
-        self.actualizar_label_total()
+        self.actualizar_label_total(total)
         
         self.btn_añadir = ttk.Button(master, text="Añadir transaccion", command=self.añadir_transaccion)
         self.btn_añadir.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
@@ -65,8 +65,8 @@ class IngresosEgresos:
     def añadir_transaccion(self):
         self.archivo.añadir_transaccion(self.date_transaccion, self.input_concepto_ingreso, self.input_ingreso, self.input_concepto_egreso, self.input_egreso)
         
-        self.calcular_total()
-        self.actualizar_label_total()
+        total = self.archivo.calcular_total()
+        self.actualizar_label_total(total)
         
         today = str(datetime.now().date())
         self.date_transaccion.entry.delete(0, ttk.END)
@@ -84,8 +84,8 @@ class IngresosEgresos:
             "monto": monto
         }
         
-    def actualizar_label_total(self):
-        self.var_total.set(f"$ {self.total_transacciones:,.0f}")
+    def actualizar_label_total(self, total):
+        self.var_total.set(f"$ {total:,.0f}")
       
     def calcular_total(self):
         self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
@@ -268,6 +268,18 @@ class ManejoArchivo:
             "tipo": tipo,
             "monto": monto
         }
+    
+    def calcular_total(self):
+        self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
+        
+        total_transacciones = 0
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                total_transacciones += transaccion["monto"]
+            elif transaccion["tipo"] == "Egreso":
+                total_transacciones -= transaccion["monto"]
+
+        return total_transacciones
 
 class ManejoExcel:
     def __init__(self, transacciones):
