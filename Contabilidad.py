@@ -152,21 +152,8 @@ class IngresosEgresos:
         VentanaTransacciones(self.master, self.transacciones)
     
     def generar_excel(self):
-        try:            
-            df_transacciones, df_ingresos, df_egresos = self.crear_dataframes()
-            
-            total = 0
-            array_total = []
-            for transaccion in self.transacciones:
-                if transaccion["tipo"] == "Ingreso":
-                    total += transaccion["monto"]
-                elif transaccion["tipo"] == "Egreso":
-                    total -= transaccion["monto"]
-                array_total.append(total)
-                
-            df_transacciones["Saldo"] = array_total
-            df_transacciones.insert(0, "Codigo","")
-            
+        try:                
+            df_transacciones, df_ingresos, df_egresos = self.crear_dataframes()            
             file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Guardar archivo de excel") 
             
             if file_path:
@@ -184,7 +171,7 @@ class IngresosEgresos:
                     worksheeet.set_column(0, 0, 10)
                     worksheeet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
                     worksheeet.set_column(2, 2, 40)
-                    worksheeet.set_column(4, 4, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
+                    worksheeet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
             
                 worksheet_transacciones.set_column(5, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
                 
@@ -220,7 +207,18 @@ class IngresosEgresos:
         
         for df in [df_transacciones, df_ingresos, df_egresos]:
             df.rename(columns={"fecha": "Fecha", "concepto": "Concepto", "tipo": "Tipo", "monto": "Monto"}, inplace=True)
+            df.insert(0, "Codigo","")
 
+        total = 0
+        array_total = []
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                total += transaccion["monto"]
+            elif transaccion["tipo"] == "Egreso":
+                total -= transaccion["monto"]
+            array_total.append(total)
+            
+        df_transacciones["Saldo"] = array_total
         return df_transacciones, df_ingresos, df_egresos
               
 class VentanaTransacciones:
