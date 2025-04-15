@@ -74,6 +74,7 @@ class IngresosEgresos:
         self.btn_generar_excel.grid(row=8, column=0, columnspan=2, padx=5, pady=10)
     
     def añadir_transaccion(self):
+        #TO-DO: Validar usando __post_init__ de TransaccionFormulario
         transaccion = TransaccionFormulario(
             fecha=self.date_transaccion.get_date(),
             concepto_ingreso=self.input_concepto_ingreso.get(),
@@ -253,6 +254,9 @@ class RepositorioTransacciones:
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
         
         self.guardar_transacciones(self.transacciones)
+    
+    def borrar_transaccion(self):
+        pass
         
     def crear_transaccion(self, fecha, concepto, tipo, monto):
         if monto > 0:
@@ -275,7 +279,7 @@ class RepositorioTransacciones:
 
         return total_transacciones
 
-class ManejoExcel:
+class ExportadorExcel:
     def __init__(self, transacciones):
         self.transacciones = transacciones
     
