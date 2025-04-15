@@ -144,30 +144,28 @@ class VentanaTransacciones:
     # y que se pueda borrar la fila seleccionada de la tabla combinada o de las tablas separadas.
     # TO-DO: Añadir tipos de gastos y ingresos
     def borrar_transacciones(self):
-        try:
-            seleccion_items = self.table_combinada.get_rows(selected=True)
-            for row in seleccion_items:
-                for i, transaccion in enumerate(self.transacciones):
-                    if transaccion["fecha"] == row.values[0] and transaccion["concepto"] == row.values[1] and transaccion["tipo"] == row.values[2] and transaccion["monto"] == int(row.values[3].replace("$", "").replace(",", "").strip()):
-                        del self.transacciones[i]
-                        break
-            
-            VentanaPrincipal(self.top.master).guardar_transacciones()
-            
-        except Exception as e:
-            Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
-            return
+        items_seleccionados = []
+        if hasattr(self, "table_combinada"):
+            items_seleccionados.extend(self.table_combinada.get_rows(selected=True))
+        elif hasattr(self, "table") and hasattr(self, "table2"):
+            items_seleccionados.extend(self.table.get_rows(selected=True))
+            items_seleccionados.extend(self.table2.get_rows(selected=True))
+        else:
+            items_seleccionados = []
+        
+        if items_seleccionados:
+            self.repo_transacciones.borrar_transaccion(items_seleccionados)
+        
+        if hasattr(self, "table_combinada"):
+            self.lista_combinada()
+        elif hasattr(self, "table") and hasattr(self, "table2"):
+            self.separar_por_tipos()
     
     def lista_combinada(self):
         self.top.geometry("804x450")
-        
-        if hasattr(self, "table_combinada"):
-            self.table_combinada.destroy()
-        if hasattr(self, "table"):
-            self.table.destroy()
-        if hasattr(self, "table2"):
-            self.table2.destroy()
-            
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
+        self.destruir_tablas()
+         
         self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
         
         self.table_combinada.get_column(0).hide()
@@ -186,13 +184,8 @@ class VentanaTransacciones:
 
     def separar_por_tipos(self):
         self.top.geometry("1308x450")
-        
-        if hasattr(self, "table_combinada"):
-            self.table_combinada.destroy()
-        if hasattr(self, "table"):
-            self.table.destroy()
-        if hasattr(self, "table2"):
-            self.table2.destroy()
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
+        self.destruir_tablas()
         
         self.table = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
         self.table2 = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
@@ -211,7 +204,13 @@ class VentanaTransacciones:
 
         self.table.load_table_data()
         self.table2.load_table_data()
-
+    
+    def destruir_tablas(self):
+        for tabla in ["table_combinada", "table", "table2"]:
+            if hasattr(self, tabla):
+                getattr(self, tabla).destroy()
+                delattr(self, tabla)
+                
 class RepositorioTransacciones:
     def __init__(self, path):
         self.path = path
@@ -274,8 +273,20 @@ class RepositorioTransacciones:
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
     
     def borrar_transaccion(self, items_seleccionados):
-        for item in items_seleccionados:
-            pass
+        if not items_seleccionados:
+            Messagebox.show_error("No se selecciono ninguna transaccion","ERROR")
+            return
+        else:
+            try:
+                for item in items_seleccionados:
+                    for i, transaccion in enumerate(self.transacciones):
+                        if transaccion["id"] == item.values[0]:
+                            del self.transacciones[i]
+                            break
+                self.guardar_transacciones(self.transacciones)
+            except Exception as e:
+                Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
+                return
         
     def crear_transaccion(self, siguiente_id,fecha, concepto, tipo, monto):
         if monto > 0:
