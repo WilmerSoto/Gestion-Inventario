@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
@@ -9,8 +10,22 @@ import json
 import os
 import pandas as pd
 
-class IngresosEgresos:
-    def __init__(self,  master):
+@dataclass         
+class TransaccionFormulario:
+    fecha: str
+    concepto_ingreso: str
+    monto_ingreso: int
+    concepto_egreso: str
+    monto_egreso: int
+    
+    def __post_init__(self):
+        if self.monto_ingreso == 0 and self.monto_egreso == 0:
+            raise ValueError("Debe haber un valor de ingreso o egreso como mínimo")
+        
+        if self.monto_ingreso < 0 or self.monto_egreso < 0:
+            raise ValueError("Los valores de ingreso y/o egreso deben ser positivos")
+class VentanaPrincipal:
+    def __init__(self,  master, repo_transacciones):
         self.master = master
         master.title("Gestion de Transacciones")
         ttk.Style().configure("TLabel", font=("Open Sans bold", 12))
@@ -19,10 +34,10 @@ class IngresosEgresos:
         master.geometry("385x410")
         master.resizable(False, False)
         
-        self.path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
-        self.transacciones = []
+        self.repo_transacciones = repo_transacciones
+        excel = ExportadorExcel(self.repo_transacciones)
         self.total_transacciones = 0
-        self.cargar_transacciones()
+        total = self.repo_transacciones.calcular_total()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry()
@@ -48,7 +63,7 @@ class IngresosEgresos:
         ttk.Label(master, text="Saldo").grid(row=5, column=0, padx=5, pady=5, sticky="w")
         self.var_total = ttk.StringVar(value="$ 0")
         ttk.Label(master, textvariable=self.var_total).grid(row=5, column=1, padx=5, pady=5, sticky="ew")
-        self.actualizar_label_total()
+        self.actualizar_label_total(total)
         
         self.btn_añadir = ttk.Button(master, text="Añadir transaccion", command=self.añadir_transaccion)
         self.btn_añadir.grid(row=6, column=0, columnspan=2, padx=5, pady=10)
@@ -56,38 +71,26 @@ class IngresosEgresos:
         self.btn_revisar_lista = ttk.Button(master, text="Revisar lista de transacciones", command=self.abrir_ventana_transacciones)
         self.btn_revisar_lista.grid(row=7, column=0, columnspan=2, padx=5, pady=10)
         
-        self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=self.generar_excel)
+        self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=excel.generar_excel)
         self.btn_generar_excel.grid(row=8, column=0, columnspan=2, padx=5, pady=10)
     
     def añadir_transaccion(self):
-        fecha = self.date_transaccion.entry.get()
-        concepto_ingreso = self.input_concepto_ingreso.get()
-        ingreso = self.input_ingreso.get()
-        concepto_egreso = self.input_concepto_egreso.get()
-        egreso = self.input_egreso.get()
-        
         try:
-            ingreso_monto = int(ingreso) if ingreso else 0
-            egreso_monto = int(egreso) if egreso else 0
-        except ValueError:
-            Messagebox.show_error("Los valores de ingreso y/o egresos debe ser numericos","ERROR")
+            transaccion = TransaccionFormulario(
+                fecha=self.date_transaccion.entry.get(),
+                concepto_ingreso=self.input_concepto_ingreso.get(),
+                monto_ingreso=int(self.input_ingreso.get() or 0),
+                concepto_egreso=self.input_concepto_egreso.get(),
+                monto_egreso=int(self.input_egreso.get() or 0)
+            )
+        except ValueError as e:
+            Messagebox.show_error(f"Error: {e}","ERROR")
             return
+            
+        self.repo_transacciones.añadir_transaccion(transaccion)
         
-        if ingreso_monto == 0 and egreso_monto == 0:
-            Messagebox.show_error("Deber haber un valor de ingreso o egreso como minimo","ERROR")
-            return
-        
-        if ingreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto_ingreso, "Ingreso", ingreso_monto))
-        
-        if egreso_monto > 0:
-            self.transacciones.append(self.crear_transaccion(fecha, concepto_egreso, "Egreso", egreso_monto))
-
-        Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
-        
-        self.calcular_total()
-        self.actualizar_label_total()
-        self.guardar_transacciones()
+        total = self.repo_transacciones.calcular_total()
+        self.actualizar_label_total(total)
         
         today = str(datetime.now().date())
         self.date_transaccion.entry.delete(0, ttk.END)
@@ -96,61 +99,222 @@ class IngresosEgresos:
         self.input_ingreso.delete(0, ttk.END)
         self.input_concepto_egreso.delete(0, ttk.END)
         self.input_egreso.delete(0, ttk.END)
+           
+    def actualizar_label_total(self, total):
+        self.var_total.set(f"$ {total:,.0f}")
+    
+    def abrir_ventana_transacciones(self):
+        VentanaTransacciones(self.repo_transacciones)
         
-    def crear_transaccion(self, fecha, concepto, tipo, monto):
-        return {
-            "fecha": fecha,
-            "concepto": concepto,
-            "tipo": tipo,
-            "monto": monto
-        }
+class VentanaTransacciones:
+    def __init__(self, repo_transacciones):
+        self.top = ttk.Toplevel(title="Lista de Transacciones")
+        self.top.geometry("804x450")
+        self.top.resizable(False, False)
+        self.repo_transacciones = repo_transacciones
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
         
-    def actualizar_label_total(self):
-        self.var_total.set(f"$ {self.total_transacciones:,.0f}")
+        ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
+        ttk.Style().configure("Treeview", font=("Open Sans", 11))
+        ttk.Style().map("Treeview", rowheight=[("!disabled", 22)]) 
+        
+        self.frame_btn = ttk.Frame(self.top)
+        self.frame_btn.pack(side=BOTTOM, anchor=W)
+        
+        self.btn_separar = ttk.Button(self.frame_btn, text="Separar por tipo", command=self.separar_por_tipos)
+        self.btn_separar.pack(side=LEFT, padx=10, pady=10)
+        
+        self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self.lista_combinada)
+        self.btn_ambos.pack(side=LEFT, padx=10, pady=10)
+        
+        self.btn_borrar = ttk.Button(self.frame_btn, text="Borrar fila", command=self.borrar_transacciones)
+        self.btn_borrar.pack(side=LEFT, padx=10, pady=10)
+        
+        self.coldata = [{"text": "id", "width": 0},
+                   {"text": "Fecha", "width": 100}, 
+                   {"text": "Concepto", "width": 300, "anchor": CENTER}, 
+                   {"text": "Tipo", "width": 100, "anchor": CENTER}, 
+                   {"text": "Monto", "width": 150}, 
+                   {"text": "Saldo", "width": 150}
+                   ]
+        self.coldata_no_saldo = self.coldata.copy()[:-1]        
+        self.lista_combinada()
+        
+    # CORREGIR EL PROBLEMA DE QUE NO SE PUEDE BORRAR LA FILA SELECCIONADA. Tener en cuenta las tres tablas
+    # y que se pueda borrar la fila seleccionada de la tabla combinada o de las tablas separadas.
+    # TO-DO: Añadir tipos de gastos y ingresos
+    def borrar_transacciones(self):
+        items_seleccionados = []
+        if hasattr(self, "table_combinada"):
+            items_seleccionados.extend(self.table_combinada.get_rows(selected=True))
+        elif hasattr(self, "table") and hasattr(self, "table2"):
+            items_seleccionados.extend(self.table.get_rows(selected=True))
+            items_seleccionados.extend(self.table2.get_rows(selected=True))
+        else:
+            items_seleccionados = []
+        
+        if items_seleccionados:
+            self.repo_transacciones.borrar_transaccion(items_seleccionados)
+        
+        if hasattr(self, "table_combinada"):
+            self.lista_combinada()
+        elif hasattr(self, "table") and hasattr(self, "table2"):
+            self.separar_por_tipos()
+    
+    def lista_combinada(self):
+        self.top.geometry("804x450")
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
+        self.destruir_tablas()
+         
+        self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
+        
+        self.table_combinada.get_column(0).hide()
+                
+        total = 0
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                total += transaccion["monto"]
+            elif transaccion["tipo"] == "Egreso":
+                total -= transaccion["monto"]
+                
+            self.table_combinada.insert_row(END, values=[transaccion["id"], transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
+            
+        self.table_combinada.pack(side=LEFT, expand=True, fill=BOTH)
+        self.table_combinada.load_table_data()
 
-    def guardar_transacciones(self):
+    def separar_por_tipos(self):
+        self.top.geometry("1308x450")
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
+        self.destruir_tablas()
+        
+        self.table = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
+        self.table2 = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
+        
+        self.table.get_column(0).hide()
+        self.table2.get_column(0).hide()
+        
+        for transaccion in self.transacciones:
+            if transaccion["tipo"] == "Ingreso":
+                self.table.insert_row(END, values=[transaccion["id"], transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
+            elif transaccion["tipo"] == "Egreso":
+                self.table2.insert_row(END, values=[transaccion["id"], transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
+                
+        self.table.pack(side=LEFT, expand=True, fill=BOTH)
+        self.table2.pack(side=RIGHT, expand=True, fill=BOTH)
+
+        self.table.load_table_data()
+        self.table2.load_table_data()
+    
+    def destruir_tablas(self):
+        for tabla in ["table_combinada", "table", "table2"]:
+            if hasattr(self, tabla):
+                getattr(self, tabla).destroy()
+                delattr(self, tabla)
+                
+class RepositorioTransacciones:
+    def __init__(self, path):
+        self.path = path
+        self.transacciones = self.cargar_transacciones()
+        self.siguiente_id = self.obtener_siguiente_id()
+    
+    def obtener_transacciones(self):
+        return self.transacciones
+    
+    def guardar_transacciones(self, transacciones):
         expanded_path = os.path.expanduser(self.path)
         directory = os.path.dirname(expanded_path)
+        
         if not os.path.exists(directory):
             try:
                 os.makedirs(directory)
             except OSError as e:
                 Messagebox().show_error(f"No se pudo crear el directorio: {e}","ERROR")
                 return
-        
         try:
             with open(expanded_path, "w") as f:
-                json.dump(self.transacciones, f, indent=4)
+                json.dump(transacciones, f, indent=4)
+                self.transacciones = transacciones
         except Exception as e:
             Messagebox().show_error(f"No se pudo guardar las transacciones: {e}","ERROR")
 
     def cargar_transacciones(self):
         expanded_path =  os.path.expanduser(self.path)
+        transacciones = []
         try:
             if os.path.exists(expanded_path):
                 with open(expanded_path, "r") as f:
-                    self.transacciones = json.load(f)
+                    transacciones = json.load(f)
             else:
-                self.transacciones = []
+                transacciones = []
         except Exception as e:
             Messagebox.show_error(f"No se pudo cargar las transacciones: {e}","ERROR")
-            self.transacciones = []
+            transacciones = []
         
-        self.calcular_total()
+        transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
+        return transacciones
+
+    def obtener_siguiente_id(self):
+        return max((transaccion["id"] for transaccion in self.transacciones), default=0) + 1
+    
+    def añadir_transaccion(self, transaccion: TransaccionFormulario):
+        transaccion_ingreso = self.crear_transaccion(self.siguiente_id, transaccion.fecha, transaccion.concepto_ingreso, "Ingreso", transaccion.monto_ingreso)
         
-    def calcular_total(self):
-        self.transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
+        if transaccion_ingreso:
+            self.transacciones.append(transaccion_ingreso)
+            self.siguiente_id += 1
+            
+        transaccion_egreso = self.crear_transaccion(self.siguiente_id, transaccion.fecha, transaccion.concepto_egreso, "Egreso", transaccion.monto_egreso)
         
-        self.total_transacciones = 0
+        if transaccion_egreso:
+            self.transacciones.append(transaccion_egreso)
+            self.siguiente_id += 1
+
+        self.guardar_transacciones(self.transacciones)
+        Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
+    
+    def borrar_transaccion(self, items_seleccionados):
+        if not items_seleccionados:
+            Messagebox.show_error("No se selecciono ninguna transaccion","ERROR")
+            return
+        else:
+            try:
+                for item in items_seleccionados:
+                    for i, transaccion in enumerate(self.transacciones):
+                        if transaccion["id"] == item.values[0]:
+                            del self.transacciones[i]
+                            break
+                self.guardar_transacciones(self.transacciones)
+            except Exception as e:
+                Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
+                return
+        
+    def crear_transaccion(self, siguiente_id,fecha, concepto, tipo, monto):
+        if monto > 0:
+            return {
+                "id": siguiente_id,
+                "fecha": fecha,
+                "concepto": concepto,
+                "tipo": tipo,
+                "monto": monto
+            }
+        else:
+            return None
+    
+    def calcular_total(self):        
+        total_transacciones = 0
         for transaccion in self.transacciones:
             if transaccion["tipo"] == "Ingreso":
-                self.total_transacciones += transaccion["monto"]
+                total_transacciones += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
-                self.total_transacciones -= transaccion["monto"]
-    
-    def abrir_ventana_transacciones(self):
-        VentanaTransacciones(self.master, self.transacciones)
-    
+                total_transacciones -= transaccion["monto"]
+
+        return total_transacciones
+
+class ExportadorExcel:
+    def __init__(self, repo_transacciones):
+        self.repo_transacciones = repo_transacciones
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
+           
     def generar_excel(self):
         try:                
             df_transacciones, df_ingresos, df_egresos = self.crear_dataframes()            
@@ -178,7 +342,7 @@ class IngresosEgresos:
         except Exception as e:
             Messagebox.show_error(f"No se pudo generar el archivo excel: {e}","ERROR")
             return
-
+    
     def formato_hojas(self, workbook, worksheet_transacciones, worksheet_ingresos, worksheet_egresos, df_transacciones, df_ingresos, df_egresos):     
         for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
             worksheet.set_column(0, 0, 10)
@@ -201,8 +365,8 @@ class IngresosEgresos:
                 index_ingreso += 1
             elif transaccion["tipo"] == "Egreso":
                 worksheet_transacciones.write_formula(f"A{i+2}", f"=Egresos!A{index_egreso}")
-                index_egreso += 1 
-
+                index_egreso += 1
+        
     def crear_dataframes(self):
         array_ingresos = []
         array_egresos = []
@@ -232,100 +396,12 @@ class IngresosEgresos:
             
         df_transacciones["Saldo"] = array_total
         return df_transacciones, df_ingresos, df_egresos
-              
-class VentanaTransacciones:
-    def __init__(self, master, transacciones):
-        self.top = ttk.Toplevel(title="Lista de Transacciones")
-        self.top.geometry("804x450")
-        self.top.resizable(False, False)
-        self.transacciones = transacciones
-        
-        ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
-        ttk.Style().configure("Treeview", font=("Open Sans", 11))
-        ttk.Style().map("Treeview", rowheight=[("!disabled", 22)]) 
-        
-        self.frame_btn = ttk.Frame(self.top)
-        self.frame_btn.pack(side=BOTTOM, anchor=W)
-        
-        self.btn_separar = ttk.Button(self.frame_btn, text="Separar por tipo", command=self.separar_por_tipos)
-        self.btn_separar.pack(side=LEFT, padx=10, pady=10)
-        
-        self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self.lista_combinada)
-        self.btn_ambos.pack(side=LEFT, padx=10, pady=10)
-        
-        self.btn_borrar = ttk.Button(self.frame_btn, text="Borrar fila", command=self.borrar_transacciones)
-        self.btn_borrar.pack(side=LEFT, padx=10, pady=10)
-        
-        self.coldata = [{"text": "Fecha", "width": 100}, 
-                   {"text": "Concepto", "width": 300, "anchor": CENTER}, 
-                   {"text": "Tipo", "width": 100, "anchor": CENTER}, 
-                   {"text": "Monto", "width": 150}, 
-                   {"text": "Saldo", "width": 150}
-                   ]
-        self.coldata_no_saldo = self.coldata.copy()[:-1]        
-        self.lista_combinada()
-        
-    # CORREGIR EL PROBLEMA DE QUE NO SE PUEDE BORRAR LA FILA SELECCIONADA. Tener en cuenta las tres tablas
-    # y que se pueda borrar la fila seleccionada de la tabla combinada o de las tablas separadas.
-    # TO-DO: Añadir tipos de gastos y ingresos
-    def borrar_transacciones(self):
-        try:
-            selected_items = self.table_combinada.selection_get()
-            print(selected_items)
-        except Exception as e:
-            Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
-            return
     
-    def lista_combinada(self):
-        self.top.geometry("804x450")
-        
-        if hasattr(self, "table_combinada"):
-            self.table_combinada.destroy()
-        if hasattr(self, "table"):
-            self.table.destroy()
-        if hasattr(self, "table2"):
-            self.table2.destroy()
-            
-        self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
-        self.table_combinada.bind("<Double-1>", lambda event: self.separar_por_tipos())
-                
-        total = 0
-        for transaccion in self.transacciones:
-            if transaccion["tipo"] == "Ingreso":
-                total += transaccion["monto"]
-            elif transaccion["tipo"] == "Egreso":
-                total -= transaccion["monto"]
-            self.table_combinada.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
-            
-        self.table_combinada.pack(side=LEFT, expand=True, fill=BOTH)
-        self.table_combinada.load_table_data()
-
-    def separar_por_tipos(self):
-        self.top.geometry("1308x450")
-        
-        if hasattr(self, "table_combinada"):
-            self.table_combinada.destroy()
-        if hasattr(self, "table"):
-            self.table.destroy()
-        if hasattr(self, "table2"):
-            self.table2.destroy()
-        
-        self.table = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
-        self.table2 = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
-        
-        for transaccion in self.transacciones:
-            if transaccion["tipo"] == "Ingreso":
-                self.table.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
-            elif transaccion["tipo"] == "Egreso":
-                self.table2.insert_row(END, values=[transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
-                
-        self.table.pack(side=LEFT, expand=True, fill=BOTH)
-        self.table2.pack(side=RIGHT, expand=True, fill=BOTH)
-
-        self.table.load_table_data()
-        self.table2.load_table_data()
-        
 if __name__ == "__main__":
     root = ttk.Window(themename="superhero")
-    app = IngresosEgresos(root)
+    
+    path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
+    repo_transacciones = RepositorioTransacciones(path)
+    
+    app = VentanaPrincipal(root, repo_transacciones)
     root.mainloop()
