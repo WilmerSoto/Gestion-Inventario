@@ -24,7 +24,7 @@ class TransaccionFormulario:
         
         if self.monto_ingreso < 0 or self.monto_egreso < 0:
             raise ValueError("Los valores de ingreso y/o egreso deben ser positivos")
-class IngresosEgresos:
+class VentanaPrincipal:
     def __init__(self,  master, repo_transacciones):
         self.master = master
         master.title("Gestion de Transacciones")
@@ -35,6 +35,7 @@ class IngresosEgresos:
         master.resizable(False, False)
         
         self.repo_transacciones = repo_transacciones
+        excel = ExportadorExcel(self.repo_transacciones)
         self.total_transacciones = 0
         total = self.repo_transacciones.calcular_total()
                 
@@ -70,11 +71,10 @@ class IngresosEgresos:
         self.btn_revisar_lista = ttk.Button(master, text="Revisar lista de transacciones", command=self.abrir_ventana_transacciones)
         self.btn_revisar_lista.grid(row=7, column=0, columnspan=2, padx=5, pady=10)
         
-        self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=self)
+        self.btn_generar_excel= ttk.Button(master, text="Generar excel", command=excel.generar_excel)
         self.btn_generar_excel.grid(row=8, column=0, columnspan=2, padx=5, pady=10)
     
     def añadir_transaccion(self):
-        #TO-DO: Validar usando __post_init__ de TransaccionFormulario
         try:
             transaccion = TransaccionFormulario(
                 fecha=self.date_transaccion.entry.get(),
@@ -107,11 +107,12 @@ class IngresosEgresos:
         VentanaTransacciones(self.repo_transacciones)
         
 class VentanaTransacciones:
-    def __init__(self, transacciones):
+    def __init__(self, repo_transacciones):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
         self.top.geometry("804x450")
         self.top.resizable(False, False)
-        self.transacciones = transacciones
+        self.repo_transacciones = repo_transacciones
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
         
         ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
         ttk.Style().configure("Treeview", font=("Open Sans", 11))
@@ -150,7 +151,7 @@ class VentanaTransacciones:
                         del self.transacciones[i]
                         break
             
-            IngresosEgresos(self.top.master).guardar_transacciones()
+            VentanaPrincipal(self.top.master).guardar_transacciones()
             
         except Exception as e:
             Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
@@ -284,9 +285,10 @@ class RepositorioTransacciones:
         return total_transacciones
 
 class ExportadorExcel:
-    def __init__(self, transacciones):
-        self.transacciones = transacciones
-    
+    def __init__(self, repo_transacciones):
+        self.repo_transacciones = repo_transacciones
+        self.transacciones = self.repo_transacciones.obtener_transacciones()
+           
     def generar_excel(self):
         try:                
             df_transacciones, df_ingresos, df_egresos = self.crear_dataframes()            
@@ -375,5 +377,5 @@ if __name__ == "__main__":
     path = "~/Documents/Gestion Ingresos-Egresos/transacciones.json"
     repo_transacciones = RepositorioTransacciones(path)
     
-    app = IngresosEgresos(root, repo_transacciones)
+    app = VentanaPrincipal(root, repo_transacciones)
     root.mainloop()
