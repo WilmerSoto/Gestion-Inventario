@@ -140,9 +140,6 @@ class VentanaTransacciones:
         self.coldata_no_saldo = self.coldata.copy()[:-1]        
         self.lista_combinada()
         
-    # CORREGIR EL PROBLEMA DE QUE NO SE PUEDE BORRAR LA FILA SELECCIONADA. Tener en cuenta las tres tablas
-    # y que se pueda borrar la fila seleccionada de la tabla combinada o de las tablas separadas.
-    # TO-DO: Añadir tipos de gastos y ingresos
     def borrar_transacciones(self):
         items_seleccionados = []
         if hasattr(self, "table_combinada"):
