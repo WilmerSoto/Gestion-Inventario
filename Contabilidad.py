@@ -209,6 +209,7 @@ class RepositorioTransacciones:
     def __init__(self, path):
         self.path = path
         self.transacciones = self.cargar_transacciones()
+        self.siguiente_id = self.obtener_siguiente_id()
     
     def obtener_transacciones(self):
         return self.transacciones
@@ -246,26 +247,33 @@ class RepositorioTransacciones:
         transacciones.sort(key=lambda x: datetime.strptime(x["fecha"], '%d/%m/%Y'))
         return transacciones
 
+    def obtener_siguiente_id(self):
+        return max((transaccion["id"] for transaccion in self.transacciones), default=0) + 1
+    
     def añadir_transaccion(self, transaccion: TransaccionFormulario):
-        transaccion_ingreso = self.crear_transaccion(transaccion.fecha, transaccion.concepto_ingreso, "Ingreso", transaccion.monto_ingreso)
-        
-        transaccion_egreso = self.crear_transaccion(transaccion.fecha, transaccion.concepto_egreso, "Egreso", transaccion.monto_egreso)
+        transaccion_ingreso = self.crear_transaccion(self.siguiente_id, transaccion.fecha, transaccion.concepto_ingreso, "Ingreso", transaccion.monto_ingreso)
         
         if transaccion_ingreso:
             self.transacciones.append(transaccion_ingreso)
+            self.siguiente_id += 1
+            
+        transaccion_egreso = self.crear_transaccion(self.siguiente_id, transaccion.fecha, transaccion.concepto_egreso, "Egreso", transaccion.monto_egreso)
+        
         if transaccion_egreso:
             self.transacciones.append(transaccion_egreso)
+            self.siguiente_id += 1
 
-        Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
-        
         self.guardar_transacciones(self.transacciones)
+        Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
     
-    def borrar_transaccion(self):
-        pass
+    def borrar_transaccion(self, items_seleccionados):
+        for item in items_seleccionados:
+            pass
         
-    def crear_transaccion(self, fecha, concepto, tipo, monto):
+    def crear_transaccion(self, siguiente_id,fecha, concepto, tipo, monto):
         if monto > 0:
             return {
+                "id": siguiente_id,
                 "fecha": fecha,
                 "concepto": concepto,
                 "tipo": tipo,
