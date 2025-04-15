@@ -75,14 +75,18 @@ class IngresosEgresos:
     
     def añadir_transaccion(self):
         #TO-DO: Validar usando __post_init__ de TransaccionFormulario
-        transaccion = TransaccionFormulario(
-            fecha=self.date_transaccion.get_date(),
-            concepto_ingreso=self.input_concepto_ingreso.get(),
-            monto_ingreso=int(self.input_ingreso.get() or 0),
-            concepto_egreso=self.input_concepto_egreso.get(),
-            monto_egreso=int(self.input_egreso.get() or 0)
-        )
-        
+        try:
+            transaccion = TransaccionFormulario(
+                fecha=self.date_transaccion.entry.get(),
+                concepto_ingreso=self.input_concepto_ingreso.get(),
+                monto_ingreso=int(self.input_ingreso.get() or 0),
+                concepto_egreso=self.input_concepto_egreso.get(),
+                monto_egreso=int(self.input_egreso.get() or 0)
+            )
+        except ValueError as e:
+            Messagebox.show_error(f"Error: {e}","ERROR")
+            return
+            
         self.repo_transacciones.añadir_transaccion(transaccion)
         
         total = self.repo_transacciones.calcular_total()
