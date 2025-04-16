@@ -150,7 +150,10 @@ class VentanaTransacciones:
         else:
             items_seleccionados = []
         
-        if items_seleccionados:
+        if not items_seleccionados:
+            Messagebox.show_error("No se selecciono ninguna transaccion","ERROR")
+            return
+        else:
             self.repo_transacciones.borrar_transaccion(items_seleccionados)
         
         if hasattr(self, "table_combinada"):
@@ -270,20 +273,16 @@ class RepositorioTransacciones:
         Messagebox.show_info("Transaccion(es) añadidas exitosamente","EXITO")
     
     def borrar_transaccion(self, items_seleccionados):
-        if not items_seleccionados:
-            Messagebox.show_error("No se selecciono ninguna transaccion","ERROR")
+        try:
+            for item in items_seleccionados:
+                for i, transaccion in enumerate(self.transacciones):
+                    if transaccion["id"] == item.values[0]:
+                        del self.transacciones[i]
+                        break
+            self.guardar_transacciones(self.transacciones)
+        except Exception as e:
+            Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
             return
-        else:
-            try:
-                for item in items_seleccionados:
-                    for i, transaccion in enumerate(self.transacciones):
-                        if transaccion["id"] == item.values[0]:
-                            del self.transacciones[i]
-                            break
-                self.guardar_transacciones(self.transacciones)
-            except Exception as e:
-                Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
-                return
         
     def crear_transaccion(self, siguiente_id,fecha, concepto, tipo, monto):
         if monto > 0:
