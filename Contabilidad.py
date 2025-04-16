@@ -40,7 +40,7 @@ class VentanaPrincipal:
         total = self.repo_transacciones.calcular_total()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.date_transaccion = ttk.DateEntry()
+        self.date_transaccion = ttk.DateEntry(firstweekday=0)
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
                 
@@ -77,7 +77,7 @@ class VentanaPrincipal:
     def añadir_transaccion(self):
         try:
             transaccion = TransaccionFormulario(
-                fecha=self.date_transaccion.entry.get(),
+                fecha=datetime.strptime(self.date_transaccion.entry.get(), "%d/%m/%Y").strftime("%d/%m/%Y"),
                 concepto_ingreso=self.input_concepto_ingreso.get(),
                 monto_ingreso=int(self.input_ingreso.get() or 0),
                 concepto_egreso=self.input_concepto_egreso.get(),
@@ -112,7 +112,6 @@ class VentanaTransacciones:
         self.top.geometry("804x450")
         self.top.resizable(False, False)
         self.repo_transacciones = repo_transacciones
-        self.transacciones = self.repo_transacciones.obtener_transacciones()
         
         ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
         ttk.Style().configure("Treeview", font=("Open Sans", 11))
@@ -163,7 +162,7 @@ class VentanaTransacciones:
     
     def lista_combinada(self):
         self.top.geometry("804x450")
-        self.transacciones = self.repo_transacciones.obtener_transacciones()
+        transacciones = self.repo_transacciones.obtener_transacciones()
         self.destruir_tablas()
          
         self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
@@ -171,7 +170,7 @@ class VentanaTransacciones:
         self.table_combinada.get_column(0).hide()
                 
         total = 0
-        for transaccion in self.transacciones:
+        for transaccion in reversed(transacciones):
             if transaccion["tipo"] == "Ingreso":
                 total += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
@@ -184,7 +183,7 @@ class VentanaTransacciones:
 
     def separar_por_tipos(self):
         self.top.geometry("1308x450")
-        self.transacciones = self.repo_transacciones.obtener_transacciones()
+        transacciones = self.repo_transacciones.obtener_transacciones()
         self.destruir_tablas()
         
         self.table = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
@@ -193,7 +192,7 @@ class VentanaTransacciones:
         self.table.get_column(0).hide()
         self.table2.get_column(0).hide()
         
-        for transaccion in self.transacciones:
+        for transaccion in reversed(transacciones):
             if transaccion["tipo"] == "Ingreso":
                 self.table.insert_row(END, values=[transaccion["id"], transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
             elif transaccion["tipo"] == "Egreso":
