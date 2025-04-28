@@ -26,6 +26,7 @@ class VentanaPrincipal:
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry(firstweekday=0)
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
+        self.date_transaccion.entry.bind("<Key>", lambda e: "break")
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
                 
         ttk.Label(master, text="Concepto Ingreso:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
@@ -61,7 +62,7 @@ class VentanaPrincipal:
     def añadir_transaccion(self):
         try:
             transaccion = TransaccionFormulario(
-                fecha=datetime.strptime(self.date_transaccion.entry.get(), "%d/%m/%Y").strftime("%d/%m/%Y"),
+                fecha=self.date_transaccion.entry.get(),
                 concepto_ingreso=self.input_concepto_ingreso.get(),
                 monto_ingreso=int(self.input_ingreso.get() or 0),
                 concepto_egreso=self.input_concepto_egreso.get(),

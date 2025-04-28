@@ -3,6 +3,8 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
 
+from data.models import TransaccionEditar, TransaccionFormulario
+
 class VentanaEditar:
     def __init__(self, transaccion_a_editar, repo_transacciones, actualizar_label_total):
         self.top = ttk.Toplevel(title="Editar Transaccion")
@@ -22,6 +24,7 @@ class VentanaEditar:
         datetime_inicial = datetime.strptime(self.transaccion_a_editar[1], "%d/%m/%Y")
         self.date_transaccion = ttk.DateEntry(master=self.top, firstweekday=0, startdate=datetime_inicial)
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
+        self.date_transaccion.entry.bind("<Key>", lambda e: "break")
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         
         ttk.Label(self.top, text="Concepto:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
@@ -33,7 +36,6 @@ class VentanaEditar:
         self.var_combobox = ttk.StringVar()
         self.combobox_transaccion = ttk.Combobox(self.top, values=["Ingreso", "Egreso"], state="readonly")
         self.combobox_transaccion.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-               
         
         ttk.Label(self.top, text="Monto").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.var_monto = ttk.StringVar()
@@ -46,14 +48,27 @@ class VentanaEditar:
         self.valores_por_defecto()
         
     def editar_transaccion(self):
-        pass
+        try:
+            transaccion_editada = TransaccionEditar(
+                fecha=self.date_transaccion.entry.get(),
+                concepto=self.var_input_concepto.get(),
+                tipo=self.combobox_transaccion.get(),
+                monto=int(self.var_monto.get() or 0) 
+            )
+        except ValueError as e:
+            Messagebox.show_error(f"Error: {e}", "ERROR")
+            return
+        
+        self.repo_transacciones.editar_transaccion(self.transaccion_a_editar, transaccion_editada)
+        self.actualizar_label_total(self.repo_transacciones.calcular_total())
+        self.top.destroy()
     
     def valores_por_defecto(self):
         if self.transaccion_a_editar[3] == "Ingreso":
             self.combobox_transaccion.set("Ingreso")
         else:
             self.combobox_transaccion.set("Egreso")
-            
+
         self.var_input_concepto.set(self.transaccion_a_editar[2])
-        self.var_monto.set(self.transaccion_a_editar[4])
+        self.var_monto.set(self.transaccion_a_editar[4].replace("$ ", "").replace(",","").strip())
         

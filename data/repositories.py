@@ -1,5 +1,5 @@
 from datetime import datetime
-from data.models import TransaccionFormulario
+from data.models import TransaccionEditar, TransaccionFormulario
 from ttkbootstrap.dialogs import Messagebox
 import os
 import json
@@ -68,14 +68,35 @@ class RepositorioTransacciones:
     def borrar_transaccion(self, items_seleccionados):
         try:
             for item in items_seleccionados:
-                for i, transaccion in enumerate(self.transacciones):
-                    if transaccion["id"] == item.values[0]:
-                        del self.transacciones[i]
-                        break
+                buscar_transaccion = self.obtener_por_id(item.values[0])
+                if buscar_transaccion != None:
+                    del self.transacciones[self.transacciones.index(buscar_transaccion)]
             self.guardar_transacciones(self.transacciones)
             return True
         except Exception as e:
             Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
+            return False
+    
+    def obtener_por_id(self, id_transaccion):
+        for transaccion in self.transacciones:
+            if transaccion["id"] == id_transaccion:
+                return transaccion
+        return None
+    
+    def editar_transaccion(self, transaccion_a_editar, valores_nuevos: TransaccionEditar):
+        try:
+            transaccion = self.obtener_por_id(transaccion_a_editar[0])
+            if transaccion != None:
+                transaccion["fecha"] = valores_nuevos.fecha
+                transaccion["concepto"] = valores_nuevos.concepto
+                transaccion["tipo"] = valores_nuevos.tipo
+                transaccion["monto"] = valores_nuevos.monto
+                
+                self.guardar_transacciones(self.transacciones)
+                Messagebox.show_info("Transaccion editada exitosamente","EXITO")
+                return True
+        except Exception as e:
+            Messagebox.show_error(f"No se pudo editar la transaccion: {e}","ERROR")
             return False
         
     def crear_transaccion(self, siguiente_id,fecha, concepto, tipo, monto):
