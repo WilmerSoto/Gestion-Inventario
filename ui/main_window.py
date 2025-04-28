@@ -88,4 +88,4 @@ class VentanaPrincipal:
         self.var_total.set(f"$ {total:,.0f}")
     
     def abrir_ventana_transacciones(self):
-        VentanaTransacciones(self.repo_transacciones)
+        VentanaTransacciones(self.repo_transacciones, self.actualizar_label_total)

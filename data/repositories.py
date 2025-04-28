@@ -73,9 +73,10 @@ class RepositorioTransacciones:
                         del self.transacciones[i]
                         break
             self.guardar_transacciones(self.transacciones)
+            return True
         except Exception as e:
             Messagebox.show_error(f"No se pudo borrar la transaccion: {e}","ERROR")
-            return
+            return False
         
     def crear_transaccion(self, siguiente_id,fecha, concepto, tipo, monto):
         if monto > 0:

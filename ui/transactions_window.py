@@ -2,13 +2,15 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
 from ttkbootstrap.tableview import Tableview
+from .edit_window import VentanaEditar
 
 class VentanaTransacciones:
-    def __init__(self, repo_transacciones):
+    def __init__(self, repo_transacciones, actualizar_label_total):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
         self.top.geometry("804x450")
         self.top.resizable(False, False)
         self.repo_transacciones = repo_transacciones
+        self.actualizar_label_total = actualizar_label_total
         
         ttk.Style().configure("Treeview.Heading", font=("Roboto bold", 14))
         ttk.Style().configure("Treeview", font=("Open Sans", 11))
@@ -23,7 +25,7 @@ class VentanaTransacciones:
         self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self.lista_combinada)
         self.btn_ambos.pack(side=LEFT, padx=10, pady=10)
         
-        self.btn_borrar = ttk.Button(self.frame_btn, text="Borrar fila", command=self.borrar_transacciones)
+        self.btn_borrar = ttk.Button(self.frame_btn, text="Borrar fila", command=self.borrar_transacciones, bootstyle="danger")
         self.btn_borrar.pack(side=LEFT, padx=10, pady=10)
         
         self.coldata = [{"text": "id", "width": 0},
@@ -50,7 +52,11 @@ class VentanaTransacciones:
             Messagebox.show_error("No se selecciono ninguna transaccion","ERROR")
             return
         else:
-            self.repo_transacciones.borrar_transaccion(items_seleccionados)
+            exito_eliminar = self.repo_transacciones.borrar_transaccion(items_seleccionados)
+            if exito_eliminar:
+                Messagebox.show_info("Transaccion(es) eliminada(s) exitosamente","EXITO")
+                self.actualizar_label_total(self.repo_transacciones.calcular_total())
+
         
         if hasattr(self, "table_combinada"):
             self.lista_combinada()
