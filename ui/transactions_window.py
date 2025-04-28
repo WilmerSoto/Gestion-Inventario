@@ -1,3 +1,4 @@
+from datetime import datetime
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
@@ -99,7 +100,9 @@ class VentanaTransacciones:
         self.table_combinada.get_column(0).hide()
                 
         total = 0
-        for transaccion in reversed(transacciones):
+        transacciones_ordenadas = sorted(transacciones, key=lambda transaccion: datetime.strptime(transaccion["fecha"], "%d/%m/%Y"), reverse=True)
+        for transaccion in transacciones_ordenadas:
+            print(transaccion)
             if transaccion["tipo"] == "Ingreso":
                 total += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
@@ -121,7 +124,8 @@ class VentanaTransacciones:
         self.table.get_column(0).hide()
         self.table2.get_column(0).hide()
         
-        for transaccion in reversed(transacciones):
+        transacciones_ordenadas = sorted(transacciones, key=lambda transaccion: datetime.strptime(transaccion["fecha"], "%d/%m/%Y"), reverse=True)
+        for transaccion in transacciones_ordenadas:
             if transaccion["tipo"] == "Ingreso":
                 self.table.insert_row(END, values=[transaccion["id"], transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"])])
             elif transaccion["tipo"] == "Egreso":
