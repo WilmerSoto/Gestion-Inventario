@@ -26,25 +26,26 @@ class VentanaPrincipal:
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.date_transaccion = ttk.DateEntry(firstweekday=0)
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
+        self.date_transaccion.entry.bind("<Key>", lambda e: "break")
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
                 
-        ttk.Label(master, text="Concepto Ingreso").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Concepto Ingreso:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.input_concepto_ingreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_concepto_ingreso.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(master, text="Ingresos").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Ingresos:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.input_ingreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_ingreso.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(master, text="Concepto Egreso").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Concepto Egreso:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.input_concepto_egreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_concepto_egreso.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
 
-        ttk.Label(master, text="Egresos").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Egresos:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.input_egreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_egreso.grid(row=4, column=1, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(master, text="Saldo").grid(row=5, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Saldo:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
         self.var_total = ttk.StringVar(value="$ 0")
         ttk.Label(master, textvariable=self.var_total).grid(row=5, column=1, padx=5, pady=5, sticky="ew")
         self.actualizar_label_total(total)
@@ -61,7 +62,7 @@ class VentanaPrincipal:
     def añadir_transaccion(self):
         try:
             transaccion = TransaccionFormulario(
-                fecha=datetime.strptime(self.date_transaccion.entry.get(), "%d/%m/%Y").strftime("%d/%m/%Y"),
+                fecha=self.date_transaccion.entry.get(),
                 concepto_ingreso=self.input_concepto_ingreso.get(),
                 monto_ingreso=int(self.input_ingreso.get() or 0),
                 concepto_egreso=self.input_concepto_egreso.get(),
@@ -88,4 +89,4 @@ class VentanaPrincipal:
         self.var_total.set(f"$ {total:,.0f}")
     
     def abrir_ventana_transacciones(self):
-        VentanaTransacciones(self.repo_transacciones)
+        VentanaTransacciones(self.repo_transacciones, self.actualizar_label_total)

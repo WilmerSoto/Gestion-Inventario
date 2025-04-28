@@ -14,3 +14,17 @@ class TransaccionFormulario:
         
         if self.monto_ingreso < 0 or self.monto_egreso < 0:
             raise ValueError("Los valores de ingreso y/o egreso deben ser positivos")
+
+@dataclass
+class TransaccionEditar:
+    fecha: str
+    concepto: str
+    tipo: str
+    monto: int
+    
+    def __post_init__(self):
+        if self.monto < 0:
+            raise ValueError("El valor de la transaccion debe ser positivo")
+        
+        if self.monto == 0:
+            raise ValueError("Debe haber un valor de monto como mínimo")
