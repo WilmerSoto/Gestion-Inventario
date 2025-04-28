@@ -79,9 +79,12 @@ class VentanaTransacciones:
         if not item_seleccionado:
             Messagebox.show_error("No se selecciono ninguna transaccion","ERROR")
             return
+        elif len(item_seleccionado) > 1:
+            Messagebox.show_error("No se puede editar mas de una transaccion a la vez","ERROR")
+            return
         else:   
             print(item_seleccionado[0].values)
-            #VentanaEditar(item_seleccionado, self.repo_transacciones, self.actualizar_label_total)
+            VentanaEditar(item_seleccionado[0].values, self.repo_transacciones, self.actualizar_label_total)
         
         if hasattr(self, "table_combinada"):
             self.lista_combinada()
