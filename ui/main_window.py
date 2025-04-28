@@ -28,23 +28,23 @@ class VentanaPrincipal:
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
                 
-        ttk.Label(master, text="Concepto Ingreso").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Concepto Ingreso:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.input_concepto_ingreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_concepto_ingreso.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(master, text="Ingresos").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Ingresos:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.input_ingreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_ingreso.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(master, text="Concepto Egreso").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Concepto Egreso:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.input_concepto_egreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_concepto_egreso.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
 
-        ttk.Label(master, text="Egresos").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Egresos:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.input_egreso = ttk.Entry(master, font=("Open Sans", 10))
         self.input_egreso.grid(row=4, column=1, padx=5, pady=5, sticky="ew")
         
-        ttk.Label(master, text="Saldo").grid(row=5, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(master, text="Saldo:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
         self.var_total = ttk.StringVar(value="$ 0")
         ttk.Label(master, textvariable=self.var_total).grid(row=5, column=1, padx=5, pady=5, sticky="ew")
         self.actualizar_label_total(total)
