@@ -71,9 +71,9 @@ class ExportadorExcel:
             elif transaccion["tipo"] == "Egreso":
                 array_egresos.append(transaccion)
                 
-        df_transacciones = pd.DataFrame(self.transacciones)
-        df_ingresos = pd.DataFrame(array_ingresos)
-        df_egresos = pd.DataFrame(array_egresos)
+        df_transacciones = pd.DataFrame(self.transacciones).drop(columns=["id"])
+        df_ingresos = pd.DataFrame(array_ingresos).drop(columns=["id"])
+        df_egresos = pd.DataFrame(array_egresos).drop(columns=["id"])
         
         for df in [df_transacciones, df_ingresos, df_egresos]:
             df.rename(columns={"fecha": "Fecha", "concepto": "Concepto", "tipo": "Tipo", "monto": "Monto"}, inplace=True)
