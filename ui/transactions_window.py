@@ -25,7 +25,10 @@ class VentanaTransacciones:
         self.btn_ambos = ttk.Button(self.frame_btn, text="Mostrar lista combinada", command=self.lista_combinada)
         self.btn_ambos.pack(side=LEFT, padx=10, pady=10)
         
-        self.btn_borrar = ttk.Button(self.frame_btn, text="Borrar fila", command=self.borrar_transacciones, bootstyle="danger")
+        self.btn_editar = ttk.Button(self.frame_btn, text="Editar transaccion", command=self.editar_transaccion, bootstyle="info")
+        self.btn_editar.pack(side=LEFT, padx=10, pady=10)
+        
+        self.btn_borrar = ttk.Button(self.frame_btn, text="Borrar transaccion", command=self.borrar_transacciones, bootstyle="danger")
         self.btn_borrar.pack(side=LEFT, padx=10, pady=10)
         
         self.coldata = [{"text": "id", "width": 0},
@@ -56,7 +59,29 @@ class VentanaTransacciones:
             if exito_eliminar:
                 Messagebox.show_info("Transaccion(es) eliminada(s) exitosamente","EXITO")
                 self.actualizar_label_total(self.repo_transacciones.calcular_total())
-
+        
+        if hasattr(self, "table_combinada"):
+            self.lista_combinada()
+        elif hasattr(self, "table") and hasattr(self, "table2"):
+            self.separar_por_tipos()
+    
+    def editar_transaccion(self):
+        item_seleccionado = []
+        if hasattr(self, "table_combinada"):
+            item_seleccionado = self.table_combinada.get_rows(selected=True)
+        elif hasattr(self, "table") and hasattr(self, "table2"):
+            item_seleccionado = self.table.get_rows(selected=True)
+            if not item_seleccionado:
+                item_seleccionado = self.table2.get_rows(selected=True)
+        else:
+            item_seleccionado = []
+        
+        if not item_seleccionado:
+            Messagebox.show_error("No se selecciono ninguna transaccion","ERROR")
+            return
+        else:   
+            print(item_seleccionado[0].values)
+            #VentanaEditar(item_seleccionado, self.repo_transacciones, self.actualizar_label_total)
         
         if hasattr(self, "table_combinada"):
             self.lista_combinada()
