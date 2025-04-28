@@ -6,7 +6,7 @@ from ttkbootstrap.dialogs import Messagebox
 from data.models import TransaccionEditar, TransaccionFormulario
 
 class VentanaEditar:
-    def __init__(self, transaccion_a_editar, repo_transacciones, actualizar_label_total):
+    def __init__(self, transaccion_a_editar, repo_transacciones, actualizar_label_total, recargar_tablas):
         self.top = ttk.Toplevel(title="Editar Transaccion")
         ttk.Style().configure("TLabel", font=("Open Sans bold", 12))
         ttk.Style().configure("TButton", font=("Open Sans bold", 10))
@@ -15,6 +15,7 @@ class VentanaEditar:
         
         self.repo_transacciones = repo_transacciones
         self.actualizar_label_total = actualizar_label_total
+        self.recargar_tablas = recargar_tablas
         self.transaccion_a_editar = transaccion_a_editar
 
         ttk.Style().configure("TLabel", font=("Open Sans bold", 12))
@@ -61,6 +62,7 @@ class VentanaEditar:
         
         self.repo_transacciones.editar_transaccion(self.transaccion_a_editar, transaccion_editada)
         self.actualizar_label_total(self.repo_transacciones.calcular_total())
+        self.recargar_tablas()
         self.top.destroy()
     
     def valores_por_defecto(self):

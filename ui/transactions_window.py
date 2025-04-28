@@ -60,10 +60,7 @@ class VentanaTransacciones:
                 Messagebox.show_info("Transaccion(es) eliminada(s) exitosamente","EXITO")
                 self.actualizar_label_total(self.repo_transacciones.calcular_total())
         
-        if hasattr(self, "table_combinada"):
-            self.lista_combinada()
-        elif hasattr(self, "table") and hasattr(self, "table2"):
-            self.separar_por_tipos()
+        self.recargar_tablas()
     
     def editar_transaccion(self):
         item_seleccionado = []
@@ -83,13 +80,14 @@ class VentanaTransacciones:
             Messagebox.show_error("No se puede editar mas de una transaccion a la vez","ERROR")
             return
         else:   
-            print(item_seleccionado[0].values)
-            VentanaEditar(item_seleccionado[0].values, self.repo_transacciones, self.actualizar_label_total)
+            VentanaEditar(item_seleccionado[0].values, self.repo_transacciones, self.actualizar_label_total, self.recargar_tablas)
         
+    def recargar_tablas(self):
         if hasattr(self, "table_combinada"):
             self.lista_combinada()
         elif hasattr(self, "table") and hasattr(self, "table2"):
             self.separar_por_tipos()
+
     
     def lista_combinada(self):
         self.top.geometry("804x450")
