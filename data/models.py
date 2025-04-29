@@ -14,6 +14,12 @@ class TransaccionFormulario:
         
         if self.monto_ingreso < 0 or self.monto_egreso < 0:
             raise ValueError("Los valores de ingreso y/o egreso deben ser positivos")
+        
+        if self.monto_ingreso > 0 and self.concepto_ingreso.strip() == "":
+            raise ValueError("El concepto de ingreso no puede estar vacío")
+
+        if self.monto_egreso > 0 and self.concepto_egreso.strip() == "":
+            raise ValueError("El concepto de egreso no puede estar vacío")
 
 @dataclass
 class TransaccionEditar:
