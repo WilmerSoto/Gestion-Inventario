@@ -1,7 +1,7 @@
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.dialogs import Messagebox
-from datetime import datetime
+from datetime import datetime, date
 
 from .transactions_window import VentanaTransacciones
 from data.repositories import RepositorioTransacciones
@@ -62,7 +62,7 @@ class VentanaPrincipal:
     def añadir_transaccion(self):
         try:
             transaccion = TransaccionFormulario(
-                fecha=self.date_transaccion.entry.get(),
+                fecha=datetime.strptime(self.date_transaccion.entry.get(), "%d/%m/%Y").strftime("%d/%m/%Y"),
                 concepto_ingreso=self.input_concepto_ingreso.get(),
                 monto_ingreso=int(self.input_ingreso.get() or 0),
                 concepto_egreso=self.input_concepto_egreso.get(),
@@ -77,7 +77,7 @@ class VentanaPrincipal:
         total = self.repo_transacciones.calcular_total()
         self.actualizar_label_total(total)
         
-        today = str(datetime.now().date())
+        today = date.today().strftime("%d/%m/%Y")
         self.date_transaccion.entry.delete(0, ttk.END)
         self.date_transaccion.entry.insert(ttk.END, today)
         self.input_concepto_ingreso.delete(0, ttk.END)

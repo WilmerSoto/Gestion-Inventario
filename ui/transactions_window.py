@@ -100,16 +100,16 @@ class VentanaTransacciones:
         self.table_combinada.get_column(0).hide()
                 
         total = 0
-        transacciones_ordenadas = sorted(transacciones, key=lambda transaccion: datetime.strptime(transaccion["fecha"], "%d/%m/%Y"), reverse=True)
+        transacciones_ordenadas = sorted(transacciones, key=lambda transaccion: datetime.strptime(transaccion["fecha"], "%d/%m/%Y"))
         for transaccion in transacciones_ordenadas:
-            print(transaccion)
             if transaccion["tipo"] == "Ingreso":
                 total += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
                 total -= transaccion["monto"]
                 
             self.table_combinada.insert_row(END, values=[transaccion["id"], transaccion["fecha"], transaccion["concepto"], transaccion["tipo"],"$ {:,.0f}".format(transaccion["monto"]), "$ {:,.0f}".format(total)])
-            
+        
+        self.table_combinada.sort_column_data(cid=1, sort=1)
         self.table_combinada.pack(side=LEFT, expand=True, fill=BOTH)
         self.table_combinada.load_table_data()
 

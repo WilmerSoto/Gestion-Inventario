@@ -51,7 +51,7 @@ class VentanaEditar:
     def editar_transaccion(self):
         try:
             transaccion_editada = TransaccionEditar(
-                fecha=self.date_transaccion.entry.get(),
+                fecha=datetime.strptime(self.date_transaccion.entry.get(), "%d/%m/%Y").strftime("%d/%m/%Y"),
                 concepto=self.var_input_concepto.get(),
                 tipo=self.combobox_transaccion.get(),
                 monto=int(self.var_monto.get() or 0) 

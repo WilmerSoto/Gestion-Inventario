@@ -113,11 +113,11 @@ class RepositorioTransacciones:
     
     def calcular_total(self):        
         total_transacciones = 0
-        transacciones_ordenadas = sorted(self.transacciones, key=lambda transaccion: datetime.strptime(transaccion["fecha"], "%d/%m/%Y"), reverse=True)
+        transacciones_ordenadas = sorted(self.transacciones, key=lambda transaccion: datetime.strptime(transaccion["fecha"], "%d/%m/%Y"))
         for transaccion in transacciones_ordenadas:
             if transaccion["tipo"] == "Ingreso":
                 total_transacciones += transaccion["monto"]
             elif transaccion["tipo"] == "Egreso":
                 total_transacciones -= transaccion["monto"]
-
+                     
         return total_transacciones
