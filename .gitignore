@@ -1,4 +1,4 @@
-Contabilidad.spec
+*.spec
 __pycache__/
 /build
 /dist
