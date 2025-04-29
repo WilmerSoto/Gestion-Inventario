@@ -41,7 +41,8 @@ class ExportadorExcel:
         for worksheet in [worksheet_transacciones, worksheet_ingresos, worksheet_egresos]:
             worksheet.set_column(0, 0, 10)
             worksheet.set_column(1, 1, 15, cell_format=workbook.add_format({"num_format": "dd/mm/yyyy", "align": "center"}))
-            worksheet.set_column(2, 2, 40)
+            worksheet.set_column(2, 2, 50, cell_format=workbook.add_format({"align": "center", "text_wrap": True}))
+            worksheet.set_column(3, 3, 12, cell_format=workbook.add_format({"align": "center"}))
             worksheet.set_column(4, 5, 15, cell_format=workbook.add_format({"num_format": "$#,##0"}))
                                 
         header_format = workbook.add_format({"bold": True, "align": "center", "valign": "vcenter", "bg_color": "#D7E4BC", "font_color": "#000000", "border": 1})                

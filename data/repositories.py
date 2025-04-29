@@ -93,7 +93,6 @@ class RepositorioTransacciones:
                 transaccion["monto"] = valores_nuevos.monto
                 
                 self.guardar_transacciones(self.transacciones)
-                Messagebox.show_info("Transaccion editada exitosamente","EXITO")
                 return True
         except Exception as e:
             Messagebox.show_error(f"No se pudo editar la transaccion: {e}","ERROR")

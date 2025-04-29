@@ -62,7 +62,7 @@ class VentanaPrincipal:
     def añadir_transaccion(self):
         try:
             transaccion = TransaccionFormulario(
-                fecha=datetime.strptime(self.date_transaccion.entry.get(), "%d/%m/%Y").strftime("%d/%m/%Y"),
+                fecha=self.date_transaccion.entry.get(),
                 concepto_ingreso=self.input_concepto_ingreso.get(),
                 monto_ingreso=int(self.input_ingreso.get() or 0),
                 concepto_egreso=self.input_concepto_egreso.get(),

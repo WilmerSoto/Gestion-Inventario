@@ -23,7 +23,7 @@ class VentanaEditar:
 
         ttk.Label(self.top, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         datetime_inicial = datetime.strptime(self.transaccion_a_editar[1], "%d/%m/%Y")
-        self.date_transaccion = ttk.DateEntry(master=self.top, firstweekday=0, startdate=datetime_inicial)
+        self.date_transaccion = ttk.DateEntry(master=self.top, firstweekday=0, startdate=datetime_inicial, dateformat="%d/%m/%Y")
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
         self.date_transaccion.entry.bind("<Key>", lambda e: "break")
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
@@ -51,7 +51,7 @@ class VentanaEditar:
     def editar_transaccion(self):
         try:
             transaccion_editada = TransaccionEditar(
-                fecha=datetime.strptime(self.date_transaccion.entry.get(), "%d/%m/%Y").strftime("%d/%m/%Y"),
+                fecha=self.date_transaccion.entry.get(),
                 concepto=self.var_input_concepto.get(),
                 tipo=self.combobox_transaccion.get(),
                 monto=int(self.var_monto.get() or 0) 
@@ -60,10 +60,12 @@ class VentanaEditar:
             Messagebox.show_error(f"Error: {e}", "ERROR")
             return
         
-        self.repo_transacciones.editar_transaccion(self.transaccion_a_editar, transaccion_editada)
-        self.actualizar_label_total(self.repo_transacciones.calcular_total())
-        self.recargar_tablas()
-        self.top.destroy()
+        bool_edit = self.repo_transacciones.editar_transaccion(self.transaccion_a_editar, transaccion_editada)
+        if bool_edit:
+            Messagebox.show_info("Transaccion editada exitosamente", "EXITO")
+            self.actualizar_label_total(self.repo_transacciones.calcular_total())
+            self.recargar_tablas()
+            self.top.destroy()
     
     def valores_por_defecto(self):
         if self.transaccion_a_editar[3] == "Ingreso":

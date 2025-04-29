@@ -8,7 +8,7 @@ from .edit_window import VentanaEditar
 class VentanaTransacciones:
     def __init__(self, repo_transacciones, actualizar_label_total):
         self.top = ttk.Toplevel(title="Lista de Transacciones")
-        self.top.geometry("804x450")
+        self.top.geometry("804x500")
         self.top.resizable(False, False)
         self.repo_transacciones = repo_transacciones
         self.actualizar_label_total = actualizar_label_total
@@ -91,11 +91,11 @@ class VentanaTransacciones:
 
     
     def lista_combinada(self):
-        self.top.geometry("804x450")
+        self.top.geometry("804x520")
         transacciones = self.repo_transacciones.obtener_transacciones()
         self.destruir_tablas()
          
-        self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True)
+        self.table_combinada = Tableview(self.top, coldata=self.coldata, searchable=True, paginated=True, pagesize=15)
         
         self.table_combinada.get_column(0).hide()
                 
