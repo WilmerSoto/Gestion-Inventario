@@ -33,11 +33,11 @@ class VentanaTransacciones:
         self.btn_borrar.pack(side=LEFT, padx=10, pady=10)
         
         self.coldata = [{"text": "id", "width": 0},
-                   {"text": "Fecha", "width": 100}, 
-                   {"text": "Concepto", "width": 300, "anchor": CENTER}, 
+                   {"text": "Fecha", "width": 120, "anchor": CENTER}, 
+                   {"text": "Concepto", "width": 350, "anchor": CENTER}, 
                    {"text": "Tipo", "width": 100, "anchor": CENTER}, 
-                   {"text": "Monto", "width": 150}, 
-                   {"text": "Saldo", "width": 150}
+                   {"text": "Monto", "width": 150, "anchor": CENTER}, 
+                   {"text": "Saldo", "width": 150, "anchor": CENTER}
                    ]
         self.coldata_no_saldo = self.coldata.copy()[:-1]        
         self.lista_combinada()
@@ -88,10 +88,9 @@ class VentanaTransacciones:
             self.lista_combinada()
         elif hasattr(self, "table") and hasattr(self, "table2"):
             self.separar_por_tipos()
-
-    
+  
     def lista_combinada(self):
-        self.top.geometry("804x520")
+        self.top.geometry("875x520")
         transacciones = self.repo_transacciones.obtener_transacciones()
         self.destruir_tablas()
          
@@ -114,12 +113,12 @@ class VentanaTransacciones:
         self.table_combinada.load_table_data()
 
     def separar_por_tipos(self):
-        self.top.geometry("1308x450")
+        self.top.geometry("1450x520")
         transacciones = self.repo_transacciones.obtener_transacciones()
         self.destruir_tablas()
         
-        self.table = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
-        self.table2 = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True)
+        self.table = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True, pagesize=15)
+        self.table2 = Tableview(self.top, coldata=self.coldata_no_saldo, searchable=True, paginated=True, pagesize=15)
         
         self.table.get_column(0).hide()
         self.table2.get_column(0).hide()
