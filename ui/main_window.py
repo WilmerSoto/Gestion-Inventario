@@ -24,7 +24,7 @@ class VentanaPrincipal:
         total = self.repo_transacciones.calcular_total()
                 
         ttk.Label(master, text="Fecha (DD-MM-YYYY):").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.date_transaccion = ttk.DateEntry(firstweekday=0)
+        self.date_transaccion = ttk.DateEntry(firstweekday=0, dateformat="%d/%m/%Y")
         self.date_transaccion.entry.configure(font=("Open Sans bold", 10))
         self.date_transaccion.entry.bind("<Key>", lambda e: "break")
         self.date_transaccion.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
